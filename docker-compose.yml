@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # back-end api built with golang
+  application:
+    container_name: application
+    build: 
+      context: abacateiro
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"      
+    networks:
+      - api_network
+    depends_on:
+      - postgres
+    restart: always
+    scale: 1 
+
+  # postgres is our primary data store
+  postgres:
+    container_name: postgres
+    build: postgres    
+    ports:
+      - "5432:5432"
+    networks:
+      - api_network
+    volumes:
+      - ./postgres/.docker/postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: abacateiro
+      POSTGRES_PASSWORD: abacateiro
+      POSTGRES_DB: abacateiro
+
+networks:
+  api_network:
+    driver: bridge
