@@ -1,11 +1,18 @@
 package http
 
 import (
-	"log"
+	"application"
+	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 )
+
+
+type errorResponse struct {
+    Error string `json:"error"`
+}
 
 func (s *Server) RegisterUserRoutes(router chi.Router) {
 	router.Get("/users", s.handleGetUsers)
@@ -16,28 +23,100 @@ func (s *Server) RegisterUserRoutes(router chi.Router) {
 }
 
 func (s *Server) handleGetUser(w http.ResponseWriter, r *http.Request) {
-	// var user core.User	
-	log.Println("GET /users/{id}")
+    idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(errorResponse{Error: "Invalid user ID"})
+		return
+	}
+	
+    user, err := s.userService.GetUser(id)
+    if err != nil {
+        w.WriteHeader(http.StatusInternalServerError)
+        json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
+        return
+    }
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(user)
 }
 
 func (s *Server) handleGetUsers(w http.ResponseWriter, r *http.Request) {
-	// var filter core.UserFilterDTO
-	s.userService.GetUsers()
-	log.Println("GET /users")
+    users, err := s.userService.GetUsers()
+
+    if err != nil {
+        w.WriteHeader(http.StatusInternalServerError)
+        json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
+        return
+    }
+
+    var userDTOs []application.UserFilterDTO
+    for _, user := range users {
+        userDTOs = append(userDTOs, application.UserFilterDTO{
+            ID:   user.ID,
+            Name: user.Name,
+            Email: user.Email,
+            Document: user.Document,
+        })
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(userDTOs)
 }
 
 func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
-	// var user core.User
-	log.Println("POST /users")
+
+    var user application.User
+
+    if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+        w.WriteHeader(http.StatusBadRequest)
+        json.NewEncoder(w).Encode(errorResponse{Error: "Invalid request payload"})
+        return
+    }
+
+    createdUser, err := s.userService.CreateUser(user)
+
+    if err != nil {
+        w.WriteHeader(http.StatusInternalServerError)
+        json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusCreated)
+    json.NewEncoder(w).Encode(createdUser)
 }
 
 func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request) {
-	// var user core.UserUpdateDTO
-	log.Println("PUT /users/{id}")
+    var user application.User
+    if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+        w.WriteHeader(http.StatusBadRequest)
+        json.NewEncoder(w).Encode(errorResponse{Error: "Invalid request payload"})
+        return
+    }
+    updatedUser, err := s.userService.UpdateUser(user)
+    if err != nil {
+        w.WriteHeader(http.StatusInternalServerError)
+        json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
+        return
+    }
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(updatedUser)
 }
 
 func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
-	// var user core.User
-	log.Println("DELETE /users/{id}")
-}
+    idStr := chi.URLParam(r, "id")
+    id, err := strconv.Atoi(idStr)
+    if err != nil {
+        w.WriteHeader(http.StatusBadRequest)
+        json.NewEncoder(w).Encode(errorResponse{Error: "Invalid user ID"})
+        return
+    }
 
+    if err := s.userService.DeleteUser(id); err != nil {
+        w.WriteHeader(http.StatusInternalServerError)
+        json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
+        return
+    }
+    w.WriteHeader(http.StatusNoContent)
+}

@@ -30,17 +30,20 @@ func (u *User) Validate() error {
     return nil
 }
 
+// ValidateUpdate verifica se os campos obrigatórios do usuário estão preenchidos
+func (u *User) ValidateUpdate() error {
+    if u.Name == "" {
+        return fmt.Errorf("name is required")
+    }
+    return nil
+}
+
 // UserFilterDTO representa os filtros para busca de usuários
 type UserFilterDTO struct {
     ID       int    `json:"id"`
     Name     string `json:"user_name"`
     Email    string `json:"user_email"`
     Document string `json:"user_document"`
-}
-
-// UserUpdateDTO representa os dados para atualização de um usuário
-type UserUpdateDTO struct {
-    Name     string `json:"user_name"`
 }
 
 // UserService define as operações disponíveis para um usuário
