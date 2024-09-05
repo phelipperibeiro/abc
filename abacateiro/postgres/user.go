@@ -24,9 +24,9 @@ func (s *UserService) CreateUser(user application.User) (application.User, error
         return application.User{}, fmt.Errorf("invalid user: %w", err)
     }
 
-    query := `INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id`
+    query := `INSERT INTO users (name, email, password, document) VALUES ($1, $2, $3, $4) RETURNING id`
 
-    err := s.db.QueryRow(context.Background(), query, user.Name, user.Email).Scan(&user.ID)
+    err := s.db.QueryRow(context.Background(), query, user.Name, user.Email, user.Password, user.Document).Scan(&user.ID)
 
     if err != nil {
         return application.User{}, fmt.Errorf("failed to create user: %w", err)

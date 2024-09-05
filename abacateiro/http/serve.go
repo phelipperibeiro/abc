@@ -2,10 +2,10 @@ package http
 
 import (
 	"application"
+	"context"
 	"log"
 	"net/http"
 	"time"
-    "context"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"

@@ -26,6 +26,7 @@ services:
       - api_network
     volumes:
       - ./postgres/.docker/postgres_data:/var/lib/postgresql/data
+      - ./abacateiro/migrations:/docker-entrypoint-initdb.d/migrations
     environment:
       POSTGRES_USER: abacateiro
       POSTGRES_PASSWORD: abacateiro
@@ -34,3 +35,6 @@ services:
 networks:
   api_network:
     driver: bridge
+
+## docker exec -it postgres /docker-entrypoint-initdb.d/at_startup/init.sh
+# docker-compose exec postgres 
