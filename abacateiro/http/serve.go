@@ -23,6 +23,17 @@ func NewServer(addr string, logger *log.Logger, userService application.UserServ
     // Criar o roteador chi
     router := chi.NewRouter()
 
+    // // Basic CORS settings
+    // router.Use(cors.Handler(cors.Options{
+    //     AllowedOrigins:   []string{"http://backend:9000"}, // Or "*"
+    //     AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+    //     AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+    //     ExposedHeaders:   []string{"Link"},
+    //     AllowCredentials: true,
+    //     MaxAge:           300, // Maximum value not ignored by any of major browsers
+    // }))
+
+
     // Adicionar middlewares do chi
     router.Use(middleware.Logger)
     router.Use(middleware.Recoverer)

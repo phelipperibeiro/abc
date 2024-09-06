@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+
   # back-end api built with golang
   backend:
     container_name: backend
@@ -46,6 +47,8 @@ services:
       - backend
     restart: always
     scale: 1
+    volumes:
+      - ./frontend-abacateiro:/app 
 
 networks:
   api_network:

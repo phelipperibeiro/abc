@@ -1,27 +1,24 @@
-# Dockerfile for Quasar 2 with Vite using Yarn and apt-get
 FROM node:18
 
-# Install any dependencies needed with apt-get
-RUN apt-get update && apt-get install -y \
-    # Adicione pacotes necessários aqui, se houver
-    && rm -rf /var/lib/apt/lists/*
+# Instalar dependências necessárias com apt-get, se houver
+# RUN apt-get update && apt-get install -y \
+#     # Adicione pacotes necessários aqui, se houver
+#     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy the frontend source code
-COPY . .
+# Instalar Yarn globalmente
+# RUN corepack enable && corepack prepare yarn@stable --activate
 
-# Install Yarn globally
-RUN corepack enable && corepack prepare yarn@stable --activate
+# Instalar as dependências do projeto
+# É uma boa prática instalar as dependências diretamente no volume
+# Se você não usa o volume, você pode manter o COPY package.json e yarn.lock aqui
+# COPY package.json yarn.lock ./
 
-# Install project dependencies using Yarn
 RUN yarn install
 
-# Build the frontend
-RUN yarn build
-
-# Expose the frontend on port 8081
+# Expor a aplicação na porta 9000
 EXPOSE 9000
 
-# Start the frontend server
+# Iniciar o servidor de desenvolvimento
 CMD ["yarn", "dev"]
