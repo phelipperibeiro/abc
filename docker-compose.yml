@@ -2,8 +2,8 @@ version: '3.8'
 
 services:
   # back-end api built with golang
-  application:
-    container_name: application
+  backend:
+    container_name: backend
     build: 
       context: abacateiro
       dockerfile: Dockerfile
@@ -31,6 +31,21 @@ services:
       POSTGRES_USER: abacateiro
       POSTGRES_PASSWORD: abacateiro
       POSTGRES_DB: abacateiro
+
+   # front-end built with quasar 
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend-abacateiro
+      dockerfile: Dockerfile
+    ports:
+      - "9000:9000"
+    networks:
+      - api_network
+    depends_on:
+      - backend
+    restart: always
+    scale: 1
 
 networks:
   api_network:
