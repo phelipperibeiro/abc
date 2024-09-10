@@ -16,10 +16,19 @@ type Server struct {
 	server      *http.Server
 	logger      *log.Logger
 	userService application.UserService
+    authService application.AuthService
+    tokenService application.TokenService
 }
 
 // NewServer construtor que inicializa um novo servidor HTTP
-func NewServer(addr string, logger *log.Logger, userService application.UserService) *Server {
+func NewServer(
+    addr string, 
+    logger *log.Logger, 
+    userService application.UserService,
+    authService application.AuthService,
+    tokenService application.TokenService,
+    ) *Server {
+
     // Criar o roteador chi
     router := chi.NewRouter()
 
@@ -48,6 +57,8 @@ func NewServer(addr string, logger *log.Logger, userService application.UserServ
         },
         logger:      logger,
         userService: userService,
+        authService: authService,
+        tokenService: tokenService,
     }
 
     // Adicionar rotas
@@ -59,6 +70,7 @@ func NewServer(addr string, logger *log.Logger, userService application.UserServ
 // registerRoutes adiciona as rotas ao roteador
 func (s *Server) registerRoutes(router *chi.Mux) {
     s.RegisterUserRoutes(router)
+    s.RegisterAuthRoutes(router)
 }
 
 // Start inicia o servidor HTTP

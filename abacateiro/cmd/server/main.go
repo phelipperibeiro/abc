@@ -1,8 +1,10 @@
 package main
 
 import (
+	"application/auth"
 	"application/http"
 	"application/postgres"
+	"application/token"
 	"context"
 	"fmt"
 	"log"
@@ -28,8 +30,13 @@ func initializeLogger() *log.Logger {
     return log.New(log.Writer(), "app: ", log.LstdFlags)
 }
 
-func initializeServer(logger *log.Logger, userService *postgres.UserService) *http.Server {
-    return http.NewServer(":8080", logger, userService)
+func initializeServer(
+    logger *log.Logger, 
+    userService *postgres.UserService,
+    authService *auth.AuthService,
+    tokenService *token.TokenService,    
+    ) *http.Server {
+    return http.NewServer(":8080", logger, userService, authService, tokenService)
 }
 
 func initializeDatabase(logger *log.Logger) *pgxpool.Pool {
@@ -41,13 +48,17 @@ func initializeDatabase(logger *log.Logger) *pgxpool.Pool {
     return dbPool
 }
 
-func main() {	
+func main() {
+
     fmt.Println("Iniciando o servidor...")
 
     logger := initializeLogger()
     dbPool := initializeDatabase(logger)
     userService := postgres.NewUserService(dbPool)
-    server := initializeServer(logger, userService)
+    authService := auth.NewAuthService(userService)
+    tokenService := token.NewUserService()    
+
+    server := initializeServer(logger, userService, authService, tokenService)
 
     // Usar contexto para gerenciar o ciclo de vida do servidor
     ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -72,3 +83,6 @@ func main() {
 
     logger.Println("Servidor desligado com sucesso")
 }
+
+
+// go run cmd/server/main.go

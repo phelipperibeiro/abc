@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jackc/pgx"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -44,6 +45,24 @@ func (s *UserService) GetUser(id int) (application.User, error) {
     err := s.db.QueryRow(context.Background(), query, id).Scan(&user.ID, &user.Name, &user.Email)
 
     if err != nil {
+        return application.User{}, fmt.Errorf("failed to get user: %w", err)
+    }
+
+    return user, nil
+}
+
+// TODO: não pode retonar user vazio
+func (s *UserService) GetUserByEmail(email string) (application.User, error) {
+    var user application.User
+
+    query := `SELECT id, name, email, document, password FROM users WHERE email = $1`
+
+    err := s.db.QueryRow(context.Background(), query, email).Scan(&user.ID, &user.Name, &user.Email, &user.Document, &user.Password)
+
+    if err != nil {
+        if err == pgx.ErrNoRows {
+            return application.User{}, fmt.Errorf("user not found: %w", err)
+        }
         return application.User{}, fmt.Errorf("failed to get user: %w", err)
     }
 

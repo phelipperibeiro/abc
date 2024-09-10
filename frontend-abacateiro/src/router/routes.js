@@ -4,10 +4,12 @@ const routes = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       { path: '', component: () => import('pages/IndexPage.vue') },
-      { path: '/User', component: () => import('pages/UserPage.vue') }
+      { path: '/user', component: () => import('pages/UserPage.vue') }
     ]
   },
-
+  {
+    path: '/login', component: () => import('pages/LoginAbcPage.vue')
+  },
   // Always leave this as last one,
   // but you can also remove it
   {

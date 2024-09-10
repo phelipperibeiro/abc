@@ -70,6 +70,7 @@ func (u *User) ValidateUpdate() error {
 type UserService interface {
     CreateUser(user User) (User, error)
     GetUser(id int) (User, error)
+    GetUserByEmail(email string) (User, error)
     GetUsers() ([]User, error)
     UpdateUser(user User) (User, error)
     DeleteUser(id int) error
