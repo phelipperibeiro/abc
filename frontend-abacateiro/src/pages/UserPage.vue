@@ -11,56 +11,65 @@
       :is-edit-mode="isEditMode"
       :user-data="selectedUser"
       @update:isModalOpen="isModalOpen = $event"
-      @saveUser="handleSaveUser"
-    />
+      @saveUser="handleSaveUser" />
+
   </q-page>
 </template>
 
 <script>
-import { ref, defineComponent, defineAsyncComponent } from "vue";
+import { ref, defineComponent, defineAsyncComponent } from 'vue';
+import axios from 'axios';
+import { EventBus } from '@/plugins/eventBus';
 
 export default defineComponent({
   name: "UserPage",
   components: {
-    UserTableActions: defineAsyncComponent(() =>
-      import("components/user/tables/UserTableActions.vue")
-    ),
-    UserFormModal: defineAsyncComponent(() =>
-      import("components/user/form/UserFormModal.vue")
-    ),
+    UserTableActions: defineAsyncComponent(() => import('components/user/tables/UserTableActions.vue')),
+    UserFormModal: defineAsyncComponent(() => import('components/user/form/UserFormModal.vue'))
   },
   setup() {
+
     const isModalOpen = ref(false);
 
     const isEditMode = ref(false);
 
     const selectedUser = ref({
-      user_name: "",
-      user_email: "",
-      user_password: "",
-      user_password_confirmation: "",
-      user_document: "",
+      user_name: '',
+      user_email: '',
+      user_password: '',
+      user_password_confirmation: '',
+      user_document: ''
     });
 
     const openModal = () => {
       isModalOpen.value = true;
     };
 
+    const closeModal = () => {
+      isModalOpen.value = false;
+    };
+
     const openCreateModal = () => {
       selectedUser.value = {
-        user_name: "",
-        user_email: "",
-        user_password: "",
-        user_password_confirmation: "",
-        user_document: "",
+        user_name: '',
+        user_email: '',
+        user_password: '',
+        user_password_confirmation: '',
+        user_document: ''
       };
-
       openModal();
     };
 
-    const handleSaveUser = (user) => {
+    const handleSaveUser = async (user) => {
       if (!isEditMode.value) {
-        console.log("Create user:", user);
+        try {
+          const response = await axios.post('http://localhost:8080/users', user);
+          console.log('Usuário salvo com sucesso:', response.data);
+          closeModal(); // Fechar modal
+          EventBus.emit('user-saved'); // Emitir evento para atualizar UserTableActions
+        } catch (error) {
+          console.error('Error creating user:', error);
+        }
       }
     };
 
@@ -69,9 +78,9 @@ export default defineComponent({
       isEditMode,
       selectedUser,
       openCreateModal,
-      handleSaveUser,
+      handleSaveUser
     };
-  },
+  }
 });
 </script>
 

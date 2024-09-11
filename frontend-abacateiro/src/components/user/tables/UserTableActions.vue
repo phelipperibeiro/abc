@@ -37,6 +37,7 @@
 
 <script>
 import { defineComponent, ref, onMounted, defineAsyncComponent } from "vue";
+import { EventBus } from '@/plugins/eventBus';
 import axios from "axios";
 
 export default defineComponent({
@@ -48,7 +49,6 @@ export default defineComponent({
   },
   setup() {
     const users = ref([]);
-
     const columns = ref([
       {
         name: "user_name",
@@ -78,7 +78,6 @@ export default defineComponent({
       },
       { name: "actions", label: "Actions", align: "right" },
     ]);
-
     const isModalOpen = ref(false);
     const isEditMode = ref(true);
 
@@ -99,8 +98,13 @@ export default defineComponent({
       }
     };
 
+    const handleUserSaved = () => {
+      fetchUsers();
+    };
+
     onMounted(() => {
       fetchUsers();
+      EventBus.on('user-saved', handleUserSaved);
     });
 
     const handleSaveUser = (user) => {

@@ -20,6 +20,8 @@
                 class="full-width"
                 v-model="user.user_name"
                 label="Nome"
+                :error="v$.user_name.$invalid && v$.user_name.$dirty"
+                :error-message="v$.user_name.$invalid ? 'Nome inválido' : ''"
               />
             </q-item>
           </div>
@@ -31,6 +33,8 @@
                 class="full-width"
                 v-model="user.user_email"
                 label="Email"
+                :error="v$.user_email.$invalid && v$.user_email.$dirty"
+                :error-message="v$.user_email.$invalid ? 'Email inválido' : ''"
               />
             </q-item>
           </div>
@@ -42,6 +46,8 @@
                 class="full-width"
                 v-model="user.user_document"
                 label="Documento"
+                :error="v$.user_document.$invalid && v$.user_document.$dirty"
+                :error-message="v$.user_document.$invalid ? 'Documento inválido' : ''"
               />
             </q-item>
           </div>
@@ -54,6 +60,8 @@
                 v-model="user.user_password"
                 label="Senha"
                 type="password"
+                :error="v$.user_password.$invalid && v$.user_password.$dirty"
+                :error-message="v$.user_password.$invalid ? 'Senha inválida' : ''"
               />
             </q-item>
           </div>
@@ -66,6 +74,8 @@
                 v-model="user.user_password_confirmation"
                 label="Confirme a Senha"
                 type="password"
+                :error="v$.user_password_confirmation.$invalid && v$.user_password_confirmation.$dirty"
+                :error-message="v$.user_password_confirmation.$invalid ? 'As senhas não coincidem' : ''"
               />
             </q-item>
           </div>
@@ -82,7 +92,9 @@
 </template>
 
 <script>
-import { ref, watch, defineComponent } from "vue";
+import { ref, computed, watch, defineComponent } from "vue";
+import useVuelidate from '@vuelidate/core';
+import { required, email, minLength, sameAs } from '@vuelidate/validators';
 
 export default defineComponent({
   name: "UserModal",
@@ -108,33 +120,38 @@ export default defineComponent({
   },
   emits: ["update:isModalOpen", "saveUser"],
   setup(props, { emit }) {
+
     const user = ref({ ...props.userData });
-
     const localIsModalOpen = ref(props.isModalOpen);
+    const password = computed(() => user.value.user_password);
 
-    watch(
-      () => props.isModalOpen,
-      (newVal) => {
-        localIsModalOpen.value = newVal;
-      }
-    );
+    watch(() => props.isModalOpen, (newVal) => { localIsModalOpen.value = newVal; });
+    watch(() => props.userData, (newVal) => { user.value = { ...newVal };})
 
-    watch(
-      () => props.userData,
-      (newVal) => {
-        user.value = { ...newVal };
-      }
-    );
+    const rules = {
+      user_name: { required },
+      user_email: { required, email },
+      user_password: { required, minLength: minLength(6) },
+      user_password_confirmation: {required, sameAsPassword: sameAs(password)},
+      user_document: { required }
+    };
+
+    const v$ = useVuelidate(rules, user);
 
     const closeModal = () => {
+
       localIsModalOpen.value = false;
-      // user.value = {
-      //   user_name: '',
-      //   user_email: '',
-      //   user_password: '',
-      //   user_password_confirmation: '',
-      //   user_document: ''
-      // };
+
+      user.value = {
+        user_name: "",
+        user_email: "",
+        user_password: "",
+        user_password_confirmation: "",
+        user_document: "",
+      };
+
+      v$.value.$reset();
+
       emit("update:isModalOpen", false);
     };
 
@@ -143,6 +160,14 @@ export default defineComponent({
     };
 
     const saveUser = () => {
+
+      v$.value.$touch();
+
+      if (v$.value.$invalid) {
+        console.log("Invalid form");
+        return;
+      }
+
       emit("saveUser", user.value);
       closeModal();
     };
@@ -153,6 +178,7 @@ export default defineComponent({
       closeModal,
       saveUser,
       onDialogHide,
+      v$
     };
   },
 });
