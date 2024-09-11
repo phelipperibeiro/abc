@@ -1,42 +1,45 @@
 <template>
   <q-page padding>
     <div class="button-container">
-      <q-btn color="primary" label="Create User" @click="openCreateModal" />          
+      <q-btn color="primary" label="Create User" @click="openCreateModal" />
     </div>
-    
+
     <UserTableActions class="q-mt-lg"></UserTableActions>
-    
-    <UserFormModal 
-      :is-modal-open="isModalOpen" 
-      :is-edit-mode="isEditMode" 
-      :user-data="selectedUser" 
+
+    <UserFormModal
+      :is-modal-open="isModalOpen"
+      :is-edit-mode="isEditMode"
+      :user-data="selectedUser"
       @update:isModalOpen="isModalOpen = $event"
-      @saveUser="handleSaveUser" />
-    
+      @saveUser="handleSaveUser"
+    />
   </q-page>
 </template>
 
 <script>
-import { ref, defineComponent, defineAsyncComponent } from 'vue';
+import { ref, defineComponent, defineAsyncComponent } from "vue";
 
 export default defineComponent({
   name: "UserPage",
   components: {
-    UserTableActions: defineAsyncComponent(() => import('components/user/tables/UserTableActions.vue')),
-    UserFormModal: defineAsyncComponent(() => import('components/user/form/UserFormModal.vue'))
+    UserTableActions: defineAsyncComponent(() =>
+      import("components/user/tables/UserTableActions.vue")
+    ),
+    UserFormModal: defineAsyncComponent(() =>
+      import("components/user/form/UserFormModal.vue")
+    ),
   },
   setup() {
-
     const isModalOpen = ref(false);
 
     const isEditMode = ref(false);
 
     const selectedUser = ref({
-      user_name: '',
-      user_email: '',
-      user_password: '',
-      user_password_confirmation: '',
-      user_document: ''
+      user_name: "",
+      user_email: "",
+      user_password: "",
+      user_password_confirmation: "",
+      user_document: "",
     });
 
     const openModal = () => {
@@ -44,13 +47,12 @@ export default defineComponent({
     };
 
     const openCreateModal = () => {
-
       selectedUser.value = {
-        user_name: '',
-        user_email: '',
-        user_password: '',
-        user_password_confirmation: '',
-        user_document: ''
+        user_name: "",
+        user_email: "",
+        user_password: "",
+        user_password_confirmation: "",
+        user_document: "",
       };
 
       openModal();
@@ -58,8 +60,8 @@ export default defineComponent({
 
     const handleSaveUser = (user) => {
       if (!isEditMode.value) {
-        console.log('Create user:', user);      
-      } 
+        console.log("Create user:", user);
+      }
     };
 
     return {
@@ -67,9 +69,9 @@ export default defineComponent({
       isEditMode,
       selectedUser,
       openCreateModal,
-      handleSaveUser
+      handleSaveUser,
     };
-  }
+  },
 });
 </script>
 
