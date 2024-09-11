@@ -9,6 +9,8 @@
 </template>
 
 <script setup>
+
+import UserTable from 'src/components/table/UserTable.vue';
 defineOptions({
   name: 'IndexPage'
 });
