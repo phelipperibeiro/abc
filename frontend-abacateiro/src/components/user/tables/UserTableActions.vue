@@ -37,7 +37,7 @@
 
 <script>
 import { defineComponent, ref, onMounted, defineAsyncComponent } from "vue";
-import { EventBus } from '@/plugins/eventBus';
+import { EventBus } from "@/plugins/eventBus";
 import axios from "axios";
 
 export default defineComponent({
@@ -82,6 +82,7 @@ export default defineComponent({
     const isEditMode = ref(true);
 
     const selectedUser = ref({
+      user_id: 0,
       user_name: "",
       user_email: "",
       user_password: "",
@@ -104,13 +105,23 @@ export default defineComponent({
 
     onMounted(() => {
       fetchUsers();
-      EventBus.on('user-saved', handleUserSaved);
+      EventBus.on("user-saved", handleUserSaved);
     });
 
-    const handleSaveUser = (user) => {
+    const handleSaveUser = async  (user) => {
       if (isEditMode.value) {
-        console.log("Edit user:", user);
+        try {
+          const response = await axios.put(
+            `http://localhost:8080/users/${user.user_id}`,
+            user
+          );
+          console.log("User updated successfully:", response.data);
+          EventBus.emit("user-saved");
+        } catch (error) {
+          console.error("Error updating user:", error);
+        }
       }
+      closeModal()
     };
 
     const deleteUser = (id) => {
@@ -121,11 +132,13 @@ export default defineComponent({
       isModalOpen.value = true;
     };
 
-    const editUser = (user) => {
-      console.log("Edit user:", user);
+    const closeModal = () => {
+      isModalOpen.value = false;
+    };
 
-      // essa linha só funciona com hot reload
+    const editUser = (user) => {
       selectedUser.value = {
+        user_id: user.id,
         user_name: user.user_name,
         user_email: user.user_email,
         user_document: user.user_document,

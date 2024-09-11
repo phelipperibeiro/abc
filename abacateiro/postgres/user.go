@@ -71,7 +71,7 @@ func (s *UserService) GetUserByEmail(email string) (application.User, error) {
 
 func (s *UserService) GetUsers() ([]application.User, error) {
 
-    query := `SELECT id, name, email FROM users`
+    query := `SELECT id, name, email, document FROM users`
 
     rows, err := s.db.Query(context.Background(), query)
 
@@ -85,7 +85,7 @@ func (s *UserService) GetUsers() ([]application.User, error) {
 
     for rows.Next() {
         var user application.User
-        if err := rows.Scan(&user.ID, &user.Name, &user.Email); err != nil {
+        if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Document); err != nil {
             return nil, fmt.Errorf("failed to scan user: %w", err)
         }
         users = append(users, user)

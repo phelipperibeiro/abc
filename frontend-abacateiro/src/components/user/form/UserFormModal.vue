@@ -47,7 +47,9 @@
                 v-model="user.user_document"
                 label="Documento"
                 :error="v$.user_document.$invalid && v$.user_document.$dirty"
-                :error-message="v$.user_document.$invalid ? 'Documento inválido' : ''"
+                :error-message="
+                  v$.user_document.$invalid ? 'Documento inválido' : ''
+                "
               />
             </q-item>
           </div>
@@ -61,7 +63,9 @@
                 label="Senha"
                 type="password"
                 :error="v$.user_password.$invalid && v$.user_password.$dirty"
-                :error-message="v$.user_password.$invalid ? 'Senha inválida' : ''"
+                :error-message="
+                  v$.user_password.$invalid ? 'Senha inválida' : ''
+                "
               />
             </q-item>
           </div>
@@ -74,8 +78,15 @@
                 v-model="user.user_password_confirmation"
                 label="Confirme a Senha"
                 type="password"
-                :error="v$.user_password_confirmation.$invalid && v$.user_password_confirmation.$dirty"
-                :error-message="v$.user_password_confirmation.$invalid ? 'As senhas não coincidem' : ''"
+                :error="
+                  v$.user_password_confirmation.$invalid &&
+                  v$.user_password_confirmation.$dirty
+                "
+                :error-message="
+                  v$.user_password_confirmation.$invalid
+                    ? 'As senhas não coincidem'
+                    : ''
+                "
               />
             </q-item>
           </div>
@@ -93,8 +104,8 @@
 
 <script>
 import { ref, computed, watch, defineComponent } from "vue";
-import useVuelidate from '@vuelidate/core';
-import { required, email, minLength, sameAs } from '@vuelidate/validators';
+import useVuelidate from "@vuelidate/core";
+import { required, email, minLength, sameAs } from "@vuelidate/validators";
 
 export default defineComponent({
   name: "UserModal",
@@ -110,6 +121,7 @@ export default defineComponent({
     userData: {
       type: Object,
       default: () => ({
+        user_id: 0,
         user_name: "",
         user_email: "",
         user_password: "",
@@ -120,29 +132,52 @@ export default defineComponent({
   },
   emits: ["update:isModalOpen", "saveUser"],
   setup(props, { emit }) {
-
     const user = ref({ ...props.userData });
     const localIsModalOpen = ref(props.isModalOpen);
     const password = computed(() => user.value.user_password);
 
-    watch(() => props.isModalOpen, (newVal) => { localIsModalOpen.value = newVal; });
-    watch(() => props.userData, (newVal) => { user.value = { ...newVal };})
+    watch(
+      () => props.isModalOpen,
+      (newVal) => {
+        localIsModalOpen.value = newVal;
+      }
+    );
+    watch(
+      () => props.userData,
+      (newVal) => {
+        user.value = { ...newVal };
+      }
+    );
 
-    const rules = {
-      user_name: { required },
-      user_email: { required, email },
-      user_password: { required, minLength: minLength(6) },
-      user_password_confirmation: {required, sameAsPassword: sameAs(password)},
-      user_document: { required }
-    };
+    const rules = computed(() => {
+
+      const baseRules = {
+        user_name: { required },
+        user_email: { required, email },
+        user_document: { required },
+      };
+
+      if (props.isEditMode) {
+        return baseRules;
+      }
+
+      return {
+        ...baseRules,
+        user_password: { required, minLength: minLength(6) },
+        user_password_confirmation: {
+          required,
+          sameAsPassword: sameAs(password),
+        },
+      };
+    });
 
     const v$ = useVuelidate(rules, user);
 
     const closeModal = () => {
-
       localIsModalOpen.value = false;
 
       user.value = {
+        user_id: 0,
         user_name: "",
         user_email: "",
         user_password: "",
@@ -160,7 +195,6 @@ export default defineComponent({
     };
 
     const saveUser = () => {
-
       v$.value.$touch();
 
       if (v$.value.$invalid) {
@@ -178,7 +212,7 @@ export default defineComponent({
       closeModal,
       saveUser,
       onDialogHide,
-      v$
+      v$,
     };
   },
 });

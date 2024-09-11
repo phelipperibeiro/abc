@@ -1,10 +1,10 @@
-import { reactive } from 'vue';
+import { reactive } from "vue";
 
 export const EventBus = reactive({
   events: {},
   emit(event, data) {
     if (this.events[event]) {
-      this.events[event].forEach(callback => callback(data));
+      this.events[event].forEach((callback) => callback(data));
     }
   },
   on(event, callback) {
@@ -15,7 +15,7 @@ export const EventBus = reactive({
   },
   off(event, callback) {
     if (this.events[event]) {
-      this.events[event] = this.events[event].filter(cb => cb !== callback);
+      this.events[event] = this.events[event].filter((cb) => cb !== callback);
     }
-  }
+  },
 });
