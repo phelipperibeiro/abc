@@ -55,7 +55,7 @@ defineOptions({
 
 const linksList = [
 {
-    title: 'user',
+    title: 'users',
     caption: 'User Table',
     icon: 'school',
     link: 'users'
