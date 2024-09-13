@@ -10,8 +10,9 @@
               <div class="col text-h6 ellipsis">Log in</div>
             </div>
           </q-card-section>
+
           <q-card-section>
-            <q-form class="q-gutter-md">
+            <q-form @submit="handleSubmit" class="q-gutter-md">
               <q-input filled v-model="username" label="Username" lazy-rules />
 
               <q-input
@@ -23,7 +24,7 @@
               />
 
               <div>
-                <q-btn label="Login" to="/" type="button" color="primary" />
+                <q-btn type="submit" label="Login" color="primary" />
               </div>
             </q-form>
           </q-card-section>
@@ -34,14 +35,34 @@
 </template>
 
 <script>
-import { defineComponent } from "vue";
-import { ref } from "vue";
+import { ref, defineComponent } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "src/stores/authStore";
 
 export default defineComponent({
   setup() {
+    const router = useRouter(); // Acessa o Vue Router
+    const authStore = useAuthStore();
+
+    const username = ref("");
+    const password = ref("");
+
+    const handleSubmit = async () => {
+      const success = await authStore.login(username.value, password.value);
+
+      if (success) {
+        // Redirecionar para a página principal, por exemplo
+        router.push("/");
+      } else {
+        // Exibir uma mensagem de erro ou tratar o erro adequadamente
+        alert("Login falhou, tente novamente.");
+      }
+    };
+
     return {
-      username: ref("Pratik"),
-      password: ref("12345"),
+      username,
+      password,
+      handleSubmit,
     };
   },
 });

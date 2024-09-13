@@ -130,10 +130,7 @@ export default defineComponent({
       }),
     },
   },
-  emits: [
-    "update:isModalOpen",
-    "saveUser"
-  ],
+  emits: ["update:isModalOpen", "saveUser"],
   setup(props, { emit }) {
     const user = ref({ ...props.userData });
     const localIsModalOpen = ref(props.isModalOpen);
@@ -154,7 +151,6 @@ export default defineComponent({
     );
 
     const rules = computed(() => {
-
       const baseRules = {
         user_name: { required },
         user_email: { required, email },
@@ -178,7 +174,6 @@ export default defineComponent({
     const v$ = useVuelidate(rules, user);
 
     const closeModal = () => {
-
       localIsModalOpen.value = false;
 
       user.value = {
@@ -200,7 +195,6 @@ export default defineComponent({
     };
 
     const saveUser = () => {
-
       v$?.value?.$touch();
 
       if (v$?.value?.$invalid) {

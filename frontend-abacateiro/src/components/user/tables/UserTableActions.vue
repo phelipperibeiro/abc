@@ -32,7 +32,6 @@
       @update:isModalOpen="isModalOpen = $event"
       @saveUser="handleSaveUser"
     />
-
   </q-card>
 </template>
 
@@ -46,7 +45,7 @@ export default defineComponent({
   components: {
     UserFormModal: defineAsyncComponent(() =>
       import("components/user/form/UserFormModal.vue")
-    )
+    ),
   },
   setup() {
     const users = ref([]);

@@ -3,16 +3,22 @@ const routes = [
     path: "/",
     component: () => import("layouts/MainLayout.vue"),
     children: [
-      { path: "", component: () => import("pages/IndexPage.vue") },
-      { path: "/user", component: () => import("pages/UserPage.vue") },
+      {
+        path: "",
+        component: () => import("pages/IndexPage.vue"),
+        meta: { requiresAuth: true }, // Exige autenticação
+      },
+      {
+        path: "/user",
+        component: () => import("pages/UserPage.vue"),
+        meta: { requiresAuth: true }, // Exige autenticação
+      },
     ],
   },
   {
     path: "/login",
     component: () => import("pages/LoginAbcPage.vue"),
   },
-  // Always leave this as last one,
-  // but you can also remove it
   {
     path: "/:catchAll(.*)*",
     component: () => import("pages/ErrorNotFound.vue"),
