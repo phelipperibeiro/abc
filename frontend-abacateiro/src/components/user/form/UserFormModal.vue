@@ -171,6 +171,10 @@ export default defineComponent({
       };
     });
 
+    /**
+     * @TODO
+     * Sempre que o saveUser é chamado, preciso de uma instância nova do v$.
+     */
     const v$ = useVuelidate(rules, user);
 
     const closeModal = () => {
@@ -195,6 +199,12 @@ export default defineComponent({
     };
 
     const saveUser = () => {
+
+      /**
+       * @TODO
+       * Veficar poque na segunda vez que eu clico no botão salvar, da erro.
+       * Acredito que seja por causa do $touch tentade fazer o $reset() antes do $touch()
+       */
       v$?.value?.$touch();
 
       if (v$?.value?.$invalid) {
