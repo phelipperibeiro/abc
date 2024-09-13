@@ -18,7 +18,7 @@
               class="q-ml-sm"
               flat
               dense
-              @click="deleteUser(props.row.id)"
+              @click="deleteUser(props.row)"
             />
           </q-td>
         </template>
@@ -32,6 +32,7 @@
       @update:isModalOpen="isModalOpen = $event"
       @saveUser="handleSaveUser"
     />
+
   </q-card>
 </template>
 
@@ -45,7 +46,7 @@ export default defineComponent({
   components: {
     UserFormModal: defineAsyncComponent(() =>
       import("components/user/form/UserFormModal.vue")
-    ),
+    )
   },
   setup() {
     const users = ref([]);
@@ -108,7 +109,9 @@ export default defineComponent({
       EventBus.on("user-saved", handleUserSaved);
     });
 
-    const handleSaveUser = async  (user) => {
+    const handleSaveUser = async (user) => {
+      console.log("User to save:", user);
+
       if (isEditMode.value) {
         try {
           const response = await axios.put(
@@ -121,11 +124,16 @@ export default defineComponent({
           console.error("Error updating user:", error);
         }
       }
-      closeModal()
+      closeModal();
     };
 
-    const deleteUser = (id) => {
-      console.log(`Delete user with id: ${id}`);
+    const deleteUser = async (user) => {
+      try {
+        await axios.delete(`http://localhost:8080/users/${user.id}`);
+        EventBus.emit("user-saved");
+      } catch (error) {
+        console.error("Error deleting user:", error);
+      }
     };
 
     const openModal = () => {
