@@ -62,3 +62,4 @@ export const useAuthStore = defineStore("auth", {
 // import { useAuthStore } from 'src/stores/authStore';
 // const authStore = useAuthStore();
 // authStore.loadFromLocalStorage();
+

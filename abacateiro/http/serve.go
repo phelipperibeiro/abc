@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 )
 
 // Server estrutura principal do servidor HTTP
@@ -32,15 +33,15 @@ func NewServer(
     // Criar o roteador chi
     router := chi.NewRouter()
 
-    // // Basic CORS settings
-    // router.Use(cors.Handler(cors.Options{
-    //     AllowedOrigins:   []string{"http://backend:9000"}, // Or "*"
-    //     AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-    //     AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-    //     ExposedHeaders:   []string{"Link"},
-    //     AllowCredentials: true,
-    //     MaxAge:           300, // Maximum value not ignored by any of major browsers
-    // }))
+    // Basic CORS settings
+    router.Use(cors.Handler(cors.Options{
+        AllowedOrigins:   []string{"http://localhost:9000"}, // Or "*"
+        AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+        AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+        ExposedHeaders:   []string{"Link"},
+        AllowCredentials: true,
+        MaxAge:           300, // Maximum value not ignored by any of major browsers
+    }))
 
 
     // Adicionar middlewares do chi
