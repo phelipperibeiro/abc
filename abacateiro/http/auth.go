@@ -27,6 +27,12 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	// login user
 	userInfo, err := s.authService.Login(r.Context(), &loginUserQuery)
 
+    if userInfo == nil {
+        w.WriteHeader(http.StatusNotFound)
+        json.NewEncoder(w).Encode(errorResponse{Error: "User not found"})
+        return
+    }
+
     if err != nil {
         w.WriteHeader(http.StatusInternalServerError)
         json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})

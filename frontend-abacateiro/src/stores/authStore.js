@@ -13,9 +13,7 @@ export const useAuthStore = defineStore("auth", {
           username,
           password,
         });
-
-        console.log("Resposta do servidor:", response.data);
-
+        // console.log("Resposta do servidor:", response.data);
         const { token, auth_id } = response.data;
 
         // Verifique se o token e auth_id estão presentes
@@ -34,7 +32,7 @@ export const useAuthStore = defineStore("auth", {
           return false;
         }
       } catch (error) {
-        console.error("Erro durante o login:", error);
+        console.error("Usuario não encontrado: ", error);
         return false;
       }
     },

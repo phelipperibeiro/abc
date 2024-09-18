@@ -49,14 +49,12 @@ export default defineComponent({
 
     const handleSubmit = async () => {
       const success = await authStore.login(username.value, password.value);
-
       if (success) {
         // Redirecionar para a página principal, por exemplo
         router.push("/");
-      } else {
-        // Exibir uma mensagem de erro ou tratar o erro adequadamente
-        alert("Login falhou, tente novamente.");
       }
+        // Exibir uma mensagem de erro ou tratar o erro adequadamente
+        // alert("Login falhou, tente novamente.");
     };
 
     return {

@@ -51,7 +51,6 @@ func (s *UserService) GetUser(id int) (application.User, error) {
     return user, nil
 }
 
-// TODO: não pode retonar user vazio
 func (s *UserService) GetUserByEmail(email string) (application.User, error) {
     var user application.User
 
@@ -60,7 +59,7 @@ func (s *UserService) GetUserByEmail(email string) (application.User, error) {
     err := s.db.QueryRow(context.Background(), query, email).Scan(&user.ID, &user.Name, &user.Email, &user.Document, &user.Password)
 
     if err != nil {
-        if err == pgx.ErrNoRows {
+        if err.Error() == pgx.ErrNoRows.Error() { 
             return application.User{}, fmt.Errorf("user not found: %w", err)
         }
         return application.User{}, fmt.Errorf("failed to get user: %w", err)
@@ -68,6 +67,7 @@ func (s *UserService) GetUserByEmail(email string) (application.User, error) {
 
     return user, nil
 }
+
 
 func (s *UserService) GetUsers() ([]application.User, error) {
 
