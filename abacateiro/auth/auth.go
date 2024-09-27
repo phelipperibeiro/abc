@@ -22,13 +22,13 @@ import (
 // }
 
 type AuthService struct {
-	userService application.UserService   
+	userService application.UserService
 }
 
 func NewAuthService(userService application.UserService) *AuthService {
-    return &AuthService{
-        userService: userService,
-    }
+	return &AuthService{
+		userService: userService,
+	}
 }
 
 func (s *AuthService) Login(ctx context.Context, query *application.LoginUserQuery) (*application.AuthInfo, error) {
@@ -44,7 +44,7 @@ func (s *AuthService) Login(ctx context.Context, query *application.LoginUserQue
 	}
 
 	return &application.AuthInfo{
-        AuthId: strconv.Itoa(user.ID),
-        Email:  user.Email,
-    }, nil
+		AuthId: strconv.Itoa(user.ID),
+		Email:  user.Email,
+	}, nil
 }

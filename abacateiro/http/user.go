@@ -24,7 +24,7 @@ import (
 // }
 
 type errorResponse struct {
-    Error string `json:"error"`
+	Error string `json:"error"`
 }
 
 func (s *Server) RegisterUserRoutes(router chi.Router) {
@@ -36,109 +36,109 @@ func (s *Server) RegisterUserRoutes(router chi.Router) {
 }
 
 func (s *Server) handleGetUser(w http.ResponseWriter, r *http.Request) {
-    idStr := chi.URLParam(r, "id")
+	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(errorResponse{Error: "Invalid user ID"})
 		return
 	}
-	
-    user, err := s.userService.GetUser(id)
-    if err != nil {
-        w.WriteHeader(http.StatusInternalServerError)
-        json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
-        return
-    }
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(user)
+
+	user, err := s.userService.GetUser(id)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(user)
 }
 
 func (s *Server) handleGetUsers(w http.ResponseWriter, r *http.Request) {
-    users, err := s.userService.GetUsers()
-    if err != nil {
-        w.WriteHeader(http.StatusInternalServerError)
-        json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
-        return
-    }
+	users, err := s.userService.GetUsers()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
+		return
+	}
 
-    userDTOs := []application.UserResponse{}
-    if len(users) > 0 {
-        userDTOs = application.ToUserResponses(users)
-    }
+	userDTOs := []application.UserResponse{}
+	if len(users) > 0 {
+		userDTOs = application.ToUserResponses(users)
+	}
 
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusOK)
-    json.NewEncoder(w).Encode(userDTOs)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(userDTOs)
 }
 
 func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 
-    var user application.User
+	var user application.User
 
-    if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-        w.WriteHeader(http.StatusBadRequest)
-        json.NewEncoder(w).Encode(errorResponse{Error: "Invalid request payload"})
-        return
-    }
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(errorResponse{Error: "Invalid request payload"})
+		return
+	}
 
-    createdUser, err := s.userService.CreateUser(user)
+	createdUser, err := s.userService.CreateUser(user)
 
-    if err != nil {
-        w.WriteHeader(http.StatusInternalServerError)
-        json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
-        return
-    }
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
+		return
+	}
 
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusCreated)
-    json.NewEncoder(w).Encode(createdUser)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(createdUser)
 }
 
 func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 
-    idStr := chi.URLParam(r, "id")
-    id, err := strconv.Atoi(idStr)
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
 
-    if err != nil {
-        w.WriteHeader(http.StatusBadRequest)
-        json.NewEncoder(w).Encode(errorResponse{Error: "Invalid user ID"})
-        return
-    }
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(errorResponse{Error: "Invalid user ID"})
+		return
+	}
 
-    var user application.User
-    if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-        w.WriteHeader(http.StatusBadRequest)
-        json.NewEncoder(w).Encode(errorResponse{Error: "Invalid request payload"})
-        return
-    }
+	var user application.User
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(errorResponse{Error: "Invalid request payload"})
+		return
+	}
 
-    user.ID = id
+	user.ID = id
 
-    updatedUser, err := s.userService.UpdateUser(user)
-    if err != nil {
-        w.WriteHeader(http.StatusInternalServerError)
-        json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
-        return
-    }
+	updatedUser, err := s.userService.UpdateUser(user)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
+		return
+	}
 
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(updatedUser)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(updatedUser)
 }
 
 func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
-    idStr := chi.URLParam(r, "id")
-    id, err := strconv.Atoi(idStr)
-    if err != nil {
-        w.WriteHeader(http.StatusBadRequest)
-        json.NewEncoder(w).Encode(errorResponse{Error: "Invalid user ID"})
-        return
-    }
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(errorResponse{Error: "Invalid user ID"})
+		return
+	}
 
-    if err := s.userService.DeleteUser(id); err != nil {
-        w.WriteHeader(http.StatusInternalServerError)
-        json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
-        return
-    }
-    w.WriteHeader(http.StatusNoContent)
+	if err := s.userService.DeleteUser(id); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }

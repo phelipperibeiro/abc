@@ -10,8 +10,8 @@ const (
 )
 
 type Token struct {
-	Token     string    `json:"token"`
-	Expiry    time.Time `json:"expiry"`	
+	Token  string    `json:"token"`
+	Expiry time.Time `json:"expiry"`
 }
 
 func (t *Token) Validate() error {
@@ -29,5 +29,5 @@ func (t *Token) Validate() error {
 
 type TokenService interface {
 	GenerateToken(AuthInfo *AuthInfo) (*Token, error)
-	ValidateToken(token string) (error)
+	ValidateToken(token string) error
 }

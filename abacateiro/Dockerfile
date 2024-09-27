@@ -32,7 +32,7 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /app/main .
 
 # Expose the port the app runs on
-EXPOSE 8080
+EXPOSE 8888
 
 # Run the Go binary
 ENTRYPOINT ["./main"]
@@ -40,5 +40,5 @@ ENTRYPOINT ["./main"]
 
 # docker create network api_network
 # docker build -f Dockerfile -t abacateiro .
-# docker run -p 8080:8080 abacateiro
-# docker run -d -p 8080:8080 --network api_network --name abacateiro abacateiro
+# docker run -p 8888:8888 abacateiro
+# docker run -d -p 8888:8888 --network api_network --name abacateiro abacateiro
