@@ -7,7 +7,7 @@ services:
       context: abacateiro
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"      
+      - "8888:8888"      
     networks:
       - api_network
     depends_on:

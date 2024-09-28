@@ -17,8 +17,7 @@ Após os contêineres estarem em execução, execute o seguinte comando para rod
 docker exec -it postgres /docker-entrypoint-initdb.d/at_startup/init.sh
 ```
 
+### Passo caso seja necessario o browser sem CORS
 ```sh
-google-chrome --disable-web-security --user-data-dir="/tmp/chrome_dev"
-google-chrome --disable-web-security --user-data-dir="/tmp/chrome_dev"
 google-chrome --disable-web-security --user-data-dir="/tmp/chrome_dev"
 ```

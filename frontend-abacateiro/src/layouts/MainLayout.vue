@@ -50,6 +50,12 @@ const linksList = [
     icon: "person",
     link: "user",
   },
+  {
+    title: "Passagens",
+    caption: "Passagens de Serviço da Equipe de Bordo",
+    icon: "note_alt",
+    link: "passagens",
+  },
   // {
   //   title: 'Docs',
   //   caption: 'quasar.dev',

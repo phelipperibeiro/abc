@@ -92,7 +92,7 @@ export default defineComponent({
 
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("http://localhost:8080/users");
+        const response = await axios.get("http://localhost:8888/users");
         users.value = response.data;
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -114,7 +114,7 @@ export default defineComponent({
       if (isEditMode.value) {
         try {
           const response = await axios.put(
-            `http://localhost:8080/users/${user.user_id}`,
+            `http://localhost:8888/users/${user.user_id}`,
             user
           );
           console.log("User updated successfully:", response.data);
@@ -128,7 +128,7 @@ export default defineComponent({
 
     const deleteUser = async (user) => {
       try {
-        await axios.delete(`http://localhost:8080/users/${user.id}`);
+        await axios.delete(`http://localhost:8888/users/${user.id}`);
         EventBus.emit("user-saved");
       } catch (error) {
         console.error("Error deleting user:", error);

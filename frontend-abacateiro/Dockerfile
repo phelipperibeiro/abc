@@ -10,10 +10,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
+
+# sudo apt-get update && sudo apt-get install -y --no-install-recommends bash git python3 python3-pip make g++ && sudo rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # Instalar Yarn globalmente
 RUN corepack enable && corepack prepare yarn@stable --activate
+# corepack enable && corepack prepare yarn@stable --activate
 
 # Instalar as dependências do projeto
 # É uma boa prática instalar as dependências diretamente no volume

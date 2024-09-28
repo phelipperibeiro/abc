@@ -69,7 +69,7 @@ export default defineComponent({
       if (!isEditMode.value) {
         try {
           const response = await axios.post(
-            "http://localhost:8080/users",
+            "http://localhost:8888/users",
             user
           );
           console.log("Usuário salvo com sucesso:", response.data);
