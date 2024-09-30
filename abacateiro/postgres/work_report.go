@@ -20,7 +20,7 @@ func NewWorkReportService(db *pgxpool.Pool) *WorkReportService {
 	}
 }
 
-func (s *WorkReportService) CreateWorkReport(ctx context.Context, wr application.WorkReport) error {
+func (s *WorkReportService) CreateWorkReport(ctx context.Context, wr *application.WorkReport) error {
 
 	if err := wr.Validate(); err != nil {
 		return fmt.Errorf("invalid work report: %w", err)
@@ -50,19 +50,6 @@ func (s *WorkReportService) FindWorkReportByID(ctx context.Context, id int) (*ap
 	return &wr, nil
 }
 
-func (s *WorkReportService) UpdateWorkReport(ctx context.Context, id int, upd application.WorkReportUpdate) (*application.WorkReport, error) {
-	query := `UPDATE work_reports SET work_report_docname = $1, unit_id = $2, work_report_from = $3, work_report_to = $4 WHERE work_report_id = $5 RETURNING work_report_id`
-
-	var wr application.WorkReport
-	err := s.db.QueryRow(context.Background(), query, upd.DocName, upd.UnitID, upd.From, upd.To, id).Scan(&wr.ID)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to update work report: %w", err)
-	}
-
-	return &wr, nil
-}
-
 func (s *WorkReportService) FindWorkReports(ctx context.Context, filter application.WorkReportFilter) ([]*application.WorkReport, application.Metadata, error) {
 	query := `SELECT work_report_id, unit_id, work_report_docname, work_report_from, work_report_to, work_report_text, work_report_data FROM work_reports`
 
@@ -84,7 +71,22 @@ func (s *WorkReportService) FindWorkReports(ctx context.Context, filter applicat
 		wrs = append(wrs, &wr)
 	}
 
-	return wrs, application.Metadata{}, nil
+	meta := application.CalculateMetadata(len(wrs), filter.Page, filter.PageSize)
+
+	return wrs, meta, nil
+}
+
+func (s *WorkReportService) UpdateWorkReport(ctx context.Context, id int, upd application.WorkReportUpdate) (*application.WorkReport, error) {
+	query := `UPDATE work_reports SET work_report_docname = $1, unit_id = $2, work_report_from = $3, work_report_to = $4 WHERE work_report_id = $5 RETURNING work_report_id`
+
+	var wr application.WorkReport
+	err := s.db.QueryRow(context.Background(), query, upd.DocName, upd.UnitID, upd.From, upd.To, id).Scan(&wr.ID)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to update work report: %w", err)
+	}
+
+	return &wr, nil
 }
 
 func (s *WorkReportService) DeleteWorkReport(ctx context.Context, id int) error {
@@ -100,7 +102,7 @@ func (s *WorkReportService) DeleteWorkReport(ctx context.Context, id int) error 
 	return nil
 }
 
-func (s *WorkReportService) CreateWorkReportTopic(ctx context.Context, wr application.WorkReportTopic) error {
+func (s *WorkReportService) CreateWorkReportTopic(ctx context.Context, wr *application.WorkReportTopic) error {
 
 	query := `INSERT INTO work_report_topics (work_report_topic_title, work_report_topic_text, work_report_id, work_report_topic_text_hash) VALUES ($1, $2, $3, hashtext($2)) RETURNING work_report_topic_id`
 
@@ -108,6 +110,42 @@ func (s *WorkReportService) CreateWorkReportTopic(ctx context.Context, wr applic
 
 	if err != nil {
 		return fmt.Errorf("failed to create work report topic: %w", err)
+	}
+
+	return nil
+}
+
+func (s *WorkReportService) DeleteDuplicatesWorkReportTopics(ctx context.Context) error {
+
+	query := `WITH Duplicates AS (
+
+					SELECT
+						work_report_topic_id,
+						ROW_NUMBER() OVER (
+							PARTITION BY work_report_topic_title, unit_id, work_report_topic_text_hash
+							ORDER BY work_report_from ASC)
+							AS rn
+					FROM
+						work_report_topics JOIN work_reports USING(work_report_id)
+
+				)
+				DELETE FROM work_report_topics
+				WHERE
+
+					work_report_topic_id IN (
+						SELECT
+							work_report_topic_id
+						FROM
+							Duplicates
+						WHERE
+							rn > 1
+
+				)`
+
+	_, err := s.db.Exec(context.Background(), query)
+
+	if err != nil {
+		return fmt.Errorf("failed to delete work report: %w", err)
 	}
 
 	return nil
@@ -211,6 +249,7 @@ func (s *WorkReportService) FindWorkReportTopics(ctx context.Context, filter app
 	return wrts, application.Metadata{}, nil
 }
 
-// func (s *WorkReportService) FindWorkReportTopicsAdvSearch(ctx context.Context, filter application.WRAdvSearchFilter) ([]*application.WRAdvSearchResult, application.Metadata, error) {
-// 	// implementar lógica de busca avançada de tópicos de relatório (full text search)
-// }
+func (s *WorkReportService) FindWorkReportTopicsAdvSearch(ctx context.Context, filter application.WRAdvSearchFilter) ([]*application.WRAdvSearchResult, application.Metadata, error) {
+	// implementar lógica de busca avançada de tópicos de relatório (full text search)
+	return nil, application.Metadata{}, nil
+}

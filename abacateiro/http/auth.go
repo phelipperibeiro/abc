@@ -17,8 +17,8 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var loginUserQuery application.LoginUserQuery
 
 	if err := json.NewDecoder(r.Body).Decode(&loginUserQuery); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errorResponse{Error: "Invalid request payload"})
+		//w.WriteHeader(http.StatusBadRequest)
+		s.Error(w, r, application.Errorf(application.ErrInvalid, "Invalid request payload"))
 		return
 	}
 
@@ -26,14 +26,14 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	userInfo, err := s.authService.Login(r.Context(), &loginUserQuery)
 
 	if userInfo == nil {
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(errorResponse{Error: "User not found"})
+		//w.WriteHeader(http.StatusNotFound)
+		s.Error(w, r, application.Errorf(application.ErrNotFound, "User not found"))
 		return
 	}
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
+		//w.WriteHeader(http.StatusInternalServerError)
+		s.Error(w, r, application.Errorf(application.ErrInternal, err.Error()))
 		return
 	}
 
@@ -41,8 +41,8 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	token, err := s.tokenService.GenerateToken(userInfo)
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
+		//w.WriteHeader(http.StatusInternalServerError)
+		s.Error(w, r, application.Errorf(application.ErrInternal, err.Error()))
 		return
 	}
 

@@ -23,10 +23,6 @@ import (
 // 	os.Exit(0)
 // }
 
-type errorResponse struct {
-	Error string `json:"error"`
-}
-
 func (s *Server) RegisterUserRoutes(router chi.Router) {
 	router.Get("/users", s.handleGetUsers)
 	router.Get("/users/{id}", s.handleGetUser)
@@ -39,15 +35,15 @@ func (s *Server) handleGetUser(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errorResponse{Error: "Invalid user ID"})
+		//w.WriteHeader(http.StatusBadRequest)
+		s.Error(w, r, application.Errorf(application.ErrInvalid, "Invalid user ID"))
 		return
 	}
 
 	user, err := s.userService.GetUser(id)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
+		//w.WriteHeader(http.StatusInternalServerError)
+		s.Error(w, r, application.Errorf(application.ErrInternal, err.Error()))
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -57,8 +53,8 @@ func (s *Server) handleGetUser(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleGetUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := s.userService.GetUsers()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
+		//w.WriteHeader(http.StatusInternalServerError)
+		s.Error(w, r, application.Errorf(application.ErrInternal, err.Error()))
 		return
 	}
 
@@ -77,16 +73,16 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	var user application.User
 
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errorResponse{Error: "Invalid request payload"})
+		//w.WriteHeader(http.StatusBadRequest)
+		s.Error(w, r, application.Errorf(application.ErrInvalid, "Invalid request payload"))
 		return
 	}
 
 	createdUser, err := s.userService.CreateUser(user)
 
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
+		//w.WriteHeader(http.StatusInternalServerError)
+		s.Error(w, r, application.Errorf(application.ErrInternal, err.Error()))
 		return
 	}
 
@@ -101,15 +97,15 @@ func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(idStr)
 
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errorResponse{Error: "Invalid user ID"})
+		//w.WriteHeader(http.StatusBadRequest)
+		s.Error(w, r, application.Errorf(application.ErrInvalid, "Invalid user ID"))
 		return
 	}
 
 	var user application.User
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errorResponse{Error: "Invalid request payload"})
+		//w.WriteHeader(http.StatusBadRequest)
+		s.Error(w, r, application.Errorf(application.ErrInvalid, "Invalid request payload"))
 		return
 	}
 
@@ -117,8 +113,8 @@ func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	updatedUser, err := s.userService.UpdateUser(user)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
+		// w.WriteHeader(http.StatusInternalServerError)
+		s.Error(w, r, application.Errorf(application.ErrInternal, err.Error()))
 		return
 	}
 
@@ -130,14 +126,14 @@ func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(errorResponse{Error: "Invalid user ID"})
+		// w.WriteHeader(http.StatusBadRequest)
+		s.Error(w, r, application.Errorf(application.ErrInvalid, "Invalid user ID"))
 		return
 	}
 
 	if err := s.userService.DeleteUser(id); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(errorResponse{Error: err.Error()})
+		// w.WriteHeader(http.StatusInternalServerError)
+		s.Error(w, r, application.Errorf(application.ErrInternal, err.Error()))
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

@@ -35,8 +35,17 @@ func initializeServer(
 	userService *postgres.UserService,
 	authService *auth.AuthService,
 	tokenService *token.TokenService,
+	workReportService *postgres.WorkReportService,
+	unitService *postgres.UnitService,
 ) *http.Server {
-	return http.NewServer(":8888", logger, userService, authService, tokenService)
+	return http.NewServer(
+		":8888",
+		logger,
+		userService,
+		authService,
+		tokenService,
+		workReportService,
+		unitService)
 }
 
 func initializeDatabase(logger *log.Logger) *pgxpool.Pool {
@@ -57,8 +66,10 @@ func main() {
 	userService := postgres.NewUserService(dbPool)
 	authService := auth.NewAuthService(userService)
 	tokenService := token.NewUserService()
+	workReportService := postgres.NewWorkReportService(dbPool)
+	unitService := postgres.NewUnitService(dbPool)
 
-	server := initializeServer(logger, userService, authService, tokenService)
+	server := initializeServer(logger, userService, authService, tokenService, workReportService, unitService)
 
 	// Usar contexto para gerenciar o ciclo de vida do servidor
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

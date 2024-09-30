@@ -73,7 +73,7 @@ func testFindWorkReportByID(logger *log.Logger, workReportService *postgres.Work
 }
 
 func testCreateWorkReport(logger *log.Logger, workReportService *postgres.WorkReportService) {
-	err := workReportService.CreateWorkReport(context.Background(), application.WorkReport{
+	err := workReportService.CreateWorkReport(context.Background(), &application.WorkReport{
 		DocName: "docname",
 		UnitID:  5,
 		From:    time.Now(),
@@ -135,7 +135,7 @@ func testCreateWorkReportTopic(logger *log.Logger, workReportService *postgres.W
 		logger.Fatalf("Erro ao buscar relatório de trabalho: %v", err)
 	}
 
-	err = workReportService.CreateWorkReportTopic(context.Background(), application.WorkReportTopic{
+	err = workReportService.CreateWorkReportTopic(context.Background(), &application.WorkReportTopic{
 		WorkReportID: workReport.ID,
 		Title:        "title",
 		Text:         "text",

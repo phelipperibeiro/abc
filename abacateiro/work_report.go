@@ -85,27 +85,30 @@ type WRAdvSearchFilter struct {
 	Pagination
 }
 
-func GetWorkReportFromFileName(fname string) (wr *WorkReport, err error) {
+func GetWorkReportFromFileName(fileName string) (wr *WorkReport, err error) {
+
 	re := regexp.MustCompile(`^(P.*|SAR|MAR)_(\d{6})_(\d{6}) - (.*).docx$`)
-	match := re.FindStringSubmatch(fname)
+
+	match := re.FindStringSubmatch(fileName)
 	if len(match) != 5 {
 		return nil, Errorf(ErrInvalid, "Nome de arquivo inválido: esperado formato UEP_YYMMDD_YYMMDD - Autor, eg. P66_220101_220115 - Victor.docx")
 	}
 
 	wr = &WorkReport{}
-
 	// remove extensao docx do arquivo
 	// nota: o regex garante que o LastIndexByte retornará um índice válido
 	wr.DocName = match[0][:strings.LastIndexByte(match[0], '.')]
 
 	wr.UnitName = match[1]
+
 	if wr.UnitName == "SAR" || wr.UnitName == "MAR" {
 		wr.UnitName = "EDISA"
 	}
-	fromStr := match[2]
-	toStr := match[3]
-	author := match[4]
-	_ = author
+
+	fromStr := match[2] // YYMMDD
+	toStr := match[3]   // YYMMDD
+	author := match[4]  // Autor
+	_ = author          // ignorar por enquanto
 
 	const dateLayout = "060102"
 	wr.From, err = time.Parse(dateLayout, fromStr)
@@ -121,7 +124,7 @@ func GetWorkReportFromFileName(fname string) (wr *WorkReport, err error) {
 		return nil, Errorf(ErrInvalid, "Data inválida: o dia %s é posterior ao dia %s", fromStr, toStr)
 	}
 
-	return
+	return wr, nil
 }
 
 func (w *WorkReport) Validate() error {

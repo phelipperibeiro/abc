@@ -14,11 +14,13 @@ import (
 
 // Server estrutura principal do servidor HTTP
 type Server struct {
-	server       *http.Server
-	logger       *log.Logger
-	userService  application.UserService
-	authService  application.AuthService
-	tokenService application.TokenService
+	server            *http.Server
+	logger            *log.Logger
+	userService       application.UserService
+	authService       application.AuthService
+	tokenService      application.TokenService
+	workReportService application.WorkReportService
+	unitService       application.UnitService
 }
 
 // NewServer construtor que inicializa um novo servidor HTTP
@@ -28,6 +30,8 @@ func NewServer(
 	userService application.UserService,
 	authService application.AuthService,
 	tokenService application.TokenService,
+	workReportService application.WorkReportService,
+	unitService application.UnitService,
 ) *Server {
 
 	// Criar o roteador chi
@@ -55,10 +59,12 @@ func NewServer(
 			ReadTimeout:  15 * time.Second,
 			WriteTimeout: 15 * time.Second,
 		},
-		logger:       logger,
-		userService:  userService,
-		authService:  authService,
-		tokenService: tokenService,
+		logger:            logger,
+		userService:       userService,
+		authService:       authService,
+		tokenService:      tokenService,
+		workReportService: workReportService,
+		unitService:       unitService,
 	}
 
 	// Adicionar rotas
@@ -71,6 +77,7 @@ func NewServer(
 func (s *Server) registerRoutes(router *chi.Mux) {
 	s.RegisterUserRoutes(router)
 	s.RegisterAuthRoutes(router)
+	s.RegisterWorkReportRoutes(router)
 }
 
 // Start inicia o servidor HTTP
