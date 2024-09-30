@@ -62,6 +62,7 @@ func (s *WorkReportService) FindWorkReports(ctx context.Context, filter applicat
 
 	for rows.Next() {
 		var wr application.WorkReport
+
 		err = rows.Scan(&wr.ID, &wr.UnitID, &wr.DocName, &wr.From, &wr.To, &wr.Text, &wr.Data)
 
 		if err != nil {
@@ -222,7 +223,7 @@ func (s *WorkReportService) FindWorkReportTopics(ctx context.Context, filter app
 	}
 
 	if len(conditions) > 0 {
-		query += " WHERE 1 = 1 AND " + strings.Join(conditions, " AND ")
+		query += " WHERE " + strings.Join(conditions, " AND ")
 	}
 
 	var wrts []*application.WorkReportTopic
@@ -233,8 +234,10 @@ func (s *WorkReportService) FindWorkReportTopics(ctx context.Context, filter app
 	}
 
 	for rows.Next() {
+
 		var wrt application.WorkReportTopic
-		err = rows.Scan(&wrt.ID, &wrt.WorkReportID, &wrt.Title, &wrt.Text)
+
+		err = rows.Scan(&wrt.ID, &wrt.Title, &wrt.Text, &wrt.WorkReportID)
 
 		if err != nil {
 			return nil, application.Metadata{}, fmt.Errorf("failed to find work report topics: %w", err)

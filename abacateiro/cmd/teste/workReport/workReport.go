@@ -185,6 +185,7 @@ func testFindWorkReportTopics(logger *log.Logger, workReportService *postgres.Wo
 			PageSize: 10,
 		},
 	})
+
 	if err != nil {
 		logger.Fatalf("Erro ao buscar tópicos de relatório de trabalho: %v", err)
 	}

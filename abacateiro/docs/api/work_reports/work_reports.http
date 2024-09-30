@@ -15,4 +15,7 @@ Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.doc
 
 
 ### Get All Work Report
-GET http://localhost:8888/work-reports HTTP/1.1
+GET http://localhost:8888/work-reports HTTP/1.1;
+
+### Get All Work Report Topics
+GET http://localhost:8888/work-report-topics HTTP/1.1;

@@ -5,34 +5,32 @@ import (
 	"application/workreport"
 	"archive/zip"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 )
 
-func dump(data interface{}) {
-	jsonData, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		fmt.Println("Erro ao serializar dados:", err)
-		os.Exit(1)
-	}
-	fmt.Println(string(jsonData))
-}
+// func dump(data interface{}) {
+// 	jsonData, err := json.MarshalIndent(data, "", "  ")
+// 	if err != nil {
+// 		fmt.Println("Erro ao serializar dados:", err)
+// 		os.Exit(1)
+// 	}
+// 	fmt.Println(string(jsonData))
+// }
 
 type findWorkReportResponse struct {
 	WorkReports []*application.WorkReport `json:"work_reports"`
 	Metadata    application.Metadata      `json:"metadata"`
 }
 
-// type findWorkReportTopicResponse struct {
-// 	WorkReportTopics []*application.WorkReportTopic `json:"work_report_topics"`
-// 	Metadata         application.Metadata           `json:"metadata"`
-// }
+type findWorkReportTopicResponse struct {
+	WorkReportTopics []*application.WorkReportTopic `json:"work_report_topics"`
+	Metadata         application.Metadata           `json:"metadata"`
+}
 
 // type findWRAdvSearchResponse struct {
 // 	Results  []*application.WRAdvSearchResult `json:"work_report_adv_search_results"`
@@ -42,6 +40,7 @@ type findWorkReportResponse struct {
 func (s *Server) RegisterWorkReportRoutes(router chi.Router) {
 	router.Get("/work-reports", s.handleWorkReportList)
 	router.Post("/work-reports/{file_name}", s.handleCreateWorkReport)
+	router.Get("/work-report-topics", s.handleWorkReportTopicList)
 
 }
 
@@ -162,7 +161,6 @@ func (s *Server) handleWorkReportList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filter.LimitPagination()
-	dump(filter)
 
 	workReports, meta, err := s.workReportService.FindWorkReports(r.Context(), filter)
 	if err != nil {
@@ -174,6 +172,39 @@ func (s *Server) handleWorkReportList(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(findWorkReportResponse{
 		WorkReports: workReports,
 		Metadata:    meta,
+	}); err != nil {
+		s.Error(w, r, err)
+		return
+	}
+}
+
+func (s *Server) handleWorkReportTopicList(w http.ResponseWriter, r *http.Request) {
+
+	var filter application.WorkReportTopicFilter
+
+	switch r.Header.Get("Content-type") {
+	case "application/json":
+		if err := json.NewDecoder(r.Body).Decode(&filter); err != nil {
+			s.Error(w, r, application.Errorf(application.ERRINVALID, "Invalid JSON body"))
+			return
+		}
+	default:
+		filter.Pagination.Page, _ = strconv.Atoi(r.URL.Query().Get("page"))
+		filter.Pagination.PageSize = 20
+	}
+
+	filter.LimitPagination()
+
+	topics, meta, err := s.workReportService.FindWorkReportTopics(r.Context(), filter)
+	if err != nil {
+		s.Error(w, r, err)
+		return
+	}
+
+	w.Header().Set("Content-type", "application/json")
+	if err := json.NewEncoder(w).Encode(findWorkReportTopicResponse{
+		WorkReportTopics: topics,
+		Metadata:         meta,
 	}); err != nil {
 		s.Error(w, r, err)
 		return
