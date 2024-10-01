@@ -53,7 +53,7 @@ export default defineComponent({
       {
        name: "unit_id",
        label: 'Unidade',
-       field: row => row.unit_id,
+       field: row => row.unit.unit_name,
        format: val => `${val}`,
        sortable: true,
        align: 'left',

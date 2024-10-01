@@ -51,7 +51,22 @@ func (s *WorkReportService) FindWorkReportByID(ctx context.Context, id int) (*ap
 }
 
 func (s *WorkReportService) FindWorkReports(ctx context.Context, filter application.WorkReportFilter) ([]*application.WorkReport, application.Metadata, error) {
-	query := `SELECT work_report_id, unit_id, work_report_docname, work_report_from, work_report_to, work_report_text, work_report_data FROM work_reports`
+
+	query := `SELECT
+				work_report_id,
+				unit_id as work_report_unit_id,
+				work_report_docname,
+				work_report_from,
+				work_report_to,
+				work_report_text, 
+				work_report_data,
+
+				unit_id,
+				unit_name,
+				storage_path as unit_storage_path,
+				prometheus_server_address as unit_prometheus_server_address
+			FROM work_reports
+			JOIN units_v2 USING(unit_id)`
 
 	var wrs []*application.WorkReport
 	rows, err := s.db.Query(context.Background(), query)
@@ -61,13 +76,22 @@ func (s *WorkReportService) FindWorkReports(ctx context.Context, filter applicat
 	}
 
 	for rows.Next() {
-		var wr application.WorkReport
 
-		err = rows.Scan(&wr.ID, &wr.UnitID, &wr.DocName, &wr.From, &wr.To, &wr.Text, &wr.Data)
+		var (
+			wr   application.WorkReport
+			unit application.Unit
+		)
+
+		err = rows.Scan(
+			&wr.ID, &wr.UnitID, &wr.DocName, &wr.From, &wr.To, &wr.Text, &wr.Data, // work_report
+			&unit.ID, &unit.Name, &unit.StoragePath, &unit.PrometheusServerAddr, // unit
+		)
 
 		if err != nil {
 			return nil, application.Metadata{}, fmt.Errorf("failed to find work reports: %w", err)
 		}
+
+		wr.Unit = &unit
 
 		wrs = append(wrs, &wr)
 	}
@@ -165,91 +189,158 @@ func (s *WorkReportService) FindWorkReportTopicByID(ctx context.Context, id int)
 	return &wrt, nil
 }
 
+// func dump(data interface{}) {
+// 	jsonData, err := json.MarshalIndent(data, "", "  ")
+// 	if err != nil {
+// 		fmt.Println("Erro ao serializar dados:", err)
+// 		os.Exit(1)
+// 	}
+// 	fmt.Println(string(jsonData))
+// }
+
 func (s *WorkReportService) FindWorkReportTopics(ctx context.Context, filter application.WorkReportTopicFilter) ([]*application.WorkReportTopic, application.Metadata, error) {
+	var (
+		conditions []string
+		args       []interface{}
+		argID      = 1
+	)
 
-	query := `SELECT
-				work_report_topic_id,
-				work_report_topic_title,
-				work_report_topic_text,
-				work_report_id
-			FROM work_report_topics
-			JOIN work_reports USING(work_report_id)`
+	// Função auxiliar para adicionar condições
+	addCondition := func(condition string, value interface{}) {
+		conditions = append(conditions, fmt.Sprintf(condition, argID))
+		args = append(args, value)
+		argID++
+	}
 
-	var conditions []string
-	var args []interface{}
-	argID := 1 // $1
-
+	// Aplicar os filtros
 	if filter.ID != nil {
-		conditions = append(conditions, fmt.Sprintf("work_report_topic_id = $%d", argID))
-		args = append(args, *filter.ID)
-		argID++ // $2
+		addCondition("work_report_topic_id = $%d", *filter.ID)
 	}
 
 	if filter.Title != nil {
-		conditions = append(conditions, fmt.Sprintf("work_report_topic_title ILIKE $%d", argID))
-		args = append(args, "%"+*filter.Title+"%")
-		argID++ // $3
+		addCondition("work_report_topic_title ILIKE $%d", "%"+*filter.Title+"%")
 	}
 
 	if filter.Text != nil {
-		conditions = append(conditions, fmt.Sprintf("work_report_topic_text ILIKE $%d", argID))
-		args = append(args, "%"+*filter.Text+"%")
-		argID++ // $4
+		addCondition("work_report_topic_text ILIKE $%d", "%"+*filter.Text+"%")
 	}
 
 	if filter.UnitID != nil {
-		conditions = append(conditions, fmt.Sprintf("work_report_id = $%d", argID))
-		args = append(args, *filter.UnitID)
-		argID++ // $5
+		addCondition("work_report_id = $%d", *filter.UnitID)
 	}
 
 	if filter.From != nil {
-		conditions = append(conditions, fmt.Sprintf("work_report_from = $%d", argID))
-		args = append(args, *filter.From)
-		argID++ // $6
+		addCondition("work_report_from = $%d", *filter.From)
 	}
 
 	if filter.To != nil {
-		conditions = append(conditions, fmt.Sprintf("work_report_to = $%d", argID))
-		args = append(args, *filter.To)
-		argID++ // $7
+		addCondition("work_report_to = $%d", *filter.To)
 	}
 
 	if filter.GlobalSearch != nil {
 		search := "%" + *filter.GlobalSearch + "%"
-		conditions = append(conditions, fmt.Sprintf("(work_report_topic_title ILIKE $%d OR work_report_topic_text ILIKE $%d)", argID, argID))
-		args = append(args, search)
-		argID++ // 8
+		addCondition("(work_report_topic_title ILIKE $%d OR work_report_topic_text ILIKE $%d)", search)
 	}
 
+	// Construir a query de contagem, para calcular a metadata
+	countQuery := `
+		SELECT COUNT(1)
+			FROM work_report_topics
+		JOIN work_reports USING(work_report_id)
+		JOIN units_v2 USING(unit_id)
+	`
+
+	// Construir a query principal
+	query := `
+		SELECT
+			work_report_topic_id,
+			work_report_topic_title,
+			work_report_topic_text,
+			work_report_id as work_report_topic_work_report_id,
+			work_report_id,
+			work_report_from,
+			work_report_to,
+			work_report_docname,				
+			unit_id as work_report_unit_id,
+			unit_id,
+			unit_name,
+			storage_path as unit_storage_path,
+			prometheus_server_address as unit_prometheus_server_address
+		FROM work_report_topics
+		JOIN work_reports USING(work_report_id)
+		JOIN units_v2 USING(unit_id)
+	`
+
+	// Adicionar condições se existirem
 	if len(conditions) > 0 {
+		countQuery += " WHERE " + strings.Join(conditions, " AND ")
 		query += " WHERE " + strings.Join(conditions, " AND ")
 	}
 
-	var wrts []*application.WorkReportTopic
-	rows, err := s.db.Query(context.Background(), query, args...)
+	var count int
+	err := s.db.QueryRow(ctx, countQuery, args...).Scan(&count)
+	if err != nil {
+		return nil, application.Metadata{}, fmt.Errorf("failed to count work report topics: %w", err)
+	}
 
+	// Adicionar ordenação e paginação
+	query += formatOrderBy(
+		filter.SortBy,
+		filter.SortDescending,
+		"work_report_topic_title",
+		[]string{
+			"work_report_topic_title",
+			"work_report_docname",
+			"work_report_from",
+			"work_report_to",
+		},
+	)
+	// Adicionar limit e offset
+	query += formatLimitOffset(filter.Limit(), filter.Offset())
+
+	// Executar a query
+	rows, err := s.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, application.Metadata{}, fmt.Errorf("failed to find work report topics: %w", err)
 	}
+	defer rows.Close()
+
+	// Processar os resultados
+	var wrts []*application.WorkReportTopic
 
 	for rows.Next() {
 
-		var wrt application.WorkReportTopic
+		var (
+			wrt  application.WorkReportTopic
+			wr   application.WorkReport
+			unit application.Unit
+		)
 
-		err = rows.Scan(&wrt.ID, &wrt.Title, &wrt.Text, &wrt.WorkReportID)
-
+		// Fazer o scan das colunas
+		err = rows.Scan(
+			&wrt.ID, &wrt.Title, &wrt.Text, &wrt.WorkReportID, // work_report_topic
+			&wr.ID, &wr.From, &wr.To, &wr.DocName, &wr.UnitID, // work_report
+			&unit.ID, &unit.Name, &unit.StoragePath, &unit.PrometheusServerAddr, // unit
+		)
 		if err != nil {
-			return nil, application.Metadata{}, fmt.Errorf("failed to find work report topics: %w", err)
+			return nil, application.Metadata{}, fmt.Errorf("failed to scan work report topics: %w", err)
 		}
 
+		// Associar o relatório de trabalho e a unidade ao tópico
+		wr.Unit = &unit
+		wrt.WorkReport = &wr
 		wrts = append(wrts, &wrt)
 	}
-	if rows.Err() != nil {
-		return nil, application.Metadata{}, fmt.Errorf("row iteration error: %w", rows.Err())
+
+	// Verificar se houve algum erro durante a iteração
+	if err = rows.Err(); err != nil {
+		return nil, application.Metadata{}, fmt.Errorf("row iteration error: %w", err)
 	}
 
-	return wrts, application.Metadata{}, nil
+	// Calcular metadata de paginação
+	meta := application.CalculateMetadata(count, filter.Page, filter.PageSize)
+
+	return wrts, meta, nil
 }
 
 func (s *WorkReportService) FindWorkReportTopicsAdvSearch(ctx context.Context, filter application.WRAdvSearchFilter) ([]*application.WRAdvSearchResult, application.Metadata, error) {
