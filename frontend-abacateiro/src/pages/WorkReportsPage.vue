@@ -19,7 +19,6 @@
       <q-separator/>
 
       <q-tab-panels v-model="tab" animated>
-
         <q-tab-panel name="reports" class="q-pa-sm">
           <ReportsComponent/>
         </q-tab-panel>
@@ -52,7 +51,7 @@ export default defineComponent({
   },
   setup() {
     return {
-      tab: ref('contact')
+      tab: ref('reports')
     };
   },
 });
