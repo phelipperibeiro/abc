@@ -14,10 +14,11 @@
 
       <q-table square class="no-shadow"
         title="Treats"
+        row-key="work_report_topic_id"
         :rows="topics"
         :columns="columns"
-        row-key="work_report_topic_id"
         :filter="filter"
+        :rows-per-page-options="[2, 5, 10, 15, 20, 25, 30, 50, 100]"
         >
           <template v-slot:top-right>
             <q-input v-if="show_filter" filled borderless dense debounce="300" v-model="filter" placeholder="Search">
@@ -44,7 +45,6 @@
           </template>
 
           <template v-slot:body="props">
-
             <q-tr :props="props">
               <q-td auto-width>
                 <q-btn size="sm" color="primary" round dense @click="props.expand = !props.expand" :icon="props.expand ? 'remove' : 'add'" />
@@ -130,7 +130,7 @@ export default {
 
     const fetchTopics= async () => {
       try {
-        const response = await axios.get("http://localhost:8888/work-report-topics");
+        const response = await axios.get("http://localhost:8888/work-report-topics?page=1&page_size=10000");
         topics.value = Array.isArray(response.data.work_report_topics) ? response.data.work_report_topics : [];
       } catch (error) {
         console.error("Erro ao buscar relatórios de trabalho:", error);

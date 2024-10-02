@@ -190,7 +190,7 @@ func (s *Server) handleWorkReportTopicList(w http.ResponseWriter, r *http.Reques
 		}
 	default:
 		filter.Pagination.Page, _ = strconv.Atoi(r.URL.Query().Get("page"))
-		filter.Pagination.PageSize = 20
+		filter.Pagination.PageSize, _ = strconv.Atoi(r.URL.Query().Get("page_size"))
 	}
 
 	filter.LimitPagination()
