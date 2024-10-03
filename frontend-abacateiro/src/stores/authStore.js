@@ -7,6 +7,7 @@ export const useAuthStore = defineStore("auth", {
     userId: null,
   }),
   actions: {
+
     async login(username, password) {
       try {
         const response = await axios.post("http://localhost:8888/login", {
@@ -36,6 +37,7 @@ export const useAuthStore = defineStore("auth", {
         return false;
       }
     },
+
     logout() {
       this.token = null;
       this.userId = null;

@@ -13,15 +13,12 @@
     <q-card-section class="q-pa-none">
 
       <q-table square class="no-shadow"
-        title="Passagens"
+        title="Treats"
         row-key="work_report_topic_id"
+        :rows="topics"
         :columns="columns"
-        :rows="paginationStore.data"
         :filter="filter"
-        :rows-per-page-options="[10, 20, 50, 100]"
-        :pagination="paginationStore.pagination"
-        @request="onRequest"
-      >
+        >
           <template v-slot:top-right>
             <q-input v-if="show_filter" filled borderless dense debounce="300" v-model="filter" placeholder="Search">
               <template v-slot:append>
@@ -31,6 +28,7 @@
 
             <q-btn class="q-ml-sm" icon="filter_list" @click="show_filter=!show_filter" flat/>
           </template>
+
 
           <template v-slot:header="props">
             <q-tr :props="props">
@@ -56,6 +54,7 @@
                 :key="col.name"
                 :props="props"
               >
+
                 <template v-if="col.name === 'Passagem'">
                   {{ col.value }}
                   <q-btn icon="download" size="sm" flat round @click="downloadTopics(props.row)" />
@@ -63,6 +62,7 @@
                 <template v-else>
                   {{ col.value }}
                 </template>
+
               </q-td>
             </q-tr>
 
@@ -73,37 +73,27 @@
               </span>
               </q-td>
             </q-tr>
+
           </template>
+
       </q-table>
 
-      <!-- Adicionando paginação manualmente -->
-      <div class="q-pa-lg flex flex-center">
-        <q-pagination
-          v-model="paginationStore.pagination.page"
-          :max="paginationStore.pagination.totalPages"
-          color="primary"
-          input
-          @update:model-value="onRequest"
-          class="custom-pagination"
-        />
-      </div>
-
     </q-card-section>
+
   </q-card>
+
 </template>
 
 <script>
-import { defineComponent, ref, onMounted, watch } from "vue";
-import { usePaginationStore } from '@/stores/paginationStore';
 
-export default defineComponent({
+import { defineComponent, ref, onMounted } from "vue";
+import axios from "axios";
+
+export default {
   name: 'TopicsComponent',
   setup () {
-    const show_filter = ref(false);
-    const paginationStore = usePaginationStore(); // Usando a store de paginação
-    const filter = ref('');
-
-
+    const show_filter = ref(false)
+    const topics = ref([]);
     const columns = ref([
       {
         name: 'Desembarque',
@@ -137,33 +127,31 @@ export default defineComponent({
       },
     ]);
 
-    const fetchTopics = () => {
-      const endpoint = 'http://localhost:8888/work-report-topics'; // Definindo o endpoint
-      const filters = {}; // Filtros adicionais (se necessário)
-      paginationStore.fetchData(endpoint, filters); // Usando a função da store para buscar os dados
-    };
-
-    const onRequest = () => {
-      fetchTopics(); // Atualiza os dados quando a paginação muda
+    const fetchTopics= async () => {
+      try {
+        const response = await axios.get("http://localhost:8888/work-report-topics?page=1&page_size=10000");
+        topics.value = Array.isArray(response.data.work_report_topics) ? response.data.work_report_topics : [];
+      } catch (error) {
+        console.error("Erro ao buscar relatórios de trabalho:", error);
+      }
     };
 
     onMounted(() => {
-      fetchTopics(); // Carrega os dados ao montar o componente
+      fetchTopics();
     });
 
     const downloadTopics = (row) => {
       console.log('Download report:', row);
-      // Lógica para download do relatório
-    };
+      // Adicione aqui a lógica para download do relatório
+    }
 
     return {
-      filter,
+      filter: ref(''),
       show_filter,
       columns,
-      paginationStore, // Retorna a store para ser usada no template
-      onRequest,
+      topics,
       downloadTopics
     }
   }
-});
+}
 </script>
