@@ -205,41 +205,39 @@ func (s *WorkReportService) FindWorkReportTopics(ctx context.Context, filter app
 		argID      = 1
 	)
 
-	// Função auxiliar para adicionar condições
-	addCondition := func(condition string, value interface{}) {
-		conditions = append(conditions, fmt.Sprintf(condition, argID))
-		args = append(args, value)
-		argID++
+	// Função auxiliar genérica para adicionar condições
+	addCondition := func(condition string, values ...interface{}) {
+		placeholders := make([]interface{}, len(values))
+		for i := range values {
+			placeholders[i] = argID + i
+		}
+		conditions = append(conditions, fmt.Sprintf(condition, placeholders...))
+		args = append(args, values...)
+		argID += len(values)
 	}
 
 	// Aplicar os filtros
 	if filter.ID != nil {
 		addCondition("work_report_topic_id = $%d", *filter.ID)
 	}
-
 	if filter.Title != nil {
 		addCondition("work_report_topic_title ILIKE $%d", "%"+*filter.Title+"%")
 	}
-
 	if filter.Text != nil {
 		addCondition("work_report_topic_text ILIKE $%d", "%"+*filter.Text+"%")
 	}
-
 	if filter.UnitID != nil {
 		addCondition("work_report_id = $%d", *filter.UnitID)
 	}
-
 	if filter.From != nil {
 		addCondition("work_report_from = $%d", *filter.From)
 	}
-
 	if filter.To != nil {
 		addCondition("work_report_to = $%d", *filter.To)
 	}
-
 	if filter.GlobalSearch != nil {
 		search := "%" + *filter.GlobalSearch + "%"
-		addCondition("(work_report_topic_title ILIKE $%d OR work_report_topic_text ILIKE $%d)", search)
+		addCondition("(work_report_topic_title ILIKE $%d OR work_report_topic_text ILIKE $%d)", search, search)
 	}
 
 	// Construir a query de contagem, para calcular a metadata
@@ -256,12 +254,12 @@ func (s *WorkReportService) FindWorkReportTopics(ctx context.Context, filter app
 			work_report_topic_id,
 			work_report_topic_title,
 			work_report_topic_text,
-			work_report_id as work_report_topic_work_report_id,
+			work_report_id AS work_report_topic_work_report_id,
 			work_report_id,
 			work_report_from,
 			work_report_to,
-			work_report_docname,				
-			unit_id as work_report_unit_id,
+			work_report_docname,
+			unit_id AS work_report_unit_id,
 			unit_id,
 			unit_name,
 			storage_path as unit_storage_path,
@@ -273,17 +271,17 @@ func (s *WorkReportService) FindWorkReportTopics(ctx context.Context, filter app
 
 	// Adicionar condições se existirem
 	if len(conditions) > 0 {
-		countQuery += " WHERE " + strings.Join(conditions, " AND ")
-		query += " WHERE " + strings.Join(conditions, " AND ")
+		whereClause := " WHERE " + strings.Join(conditions, " AND ")
+		countQuery += whereClause
+		query += whereClause
 	}
 
 	var count int
-	err := s.db.QueryRow(ctx, countQuery, args...).Scan(&count)
-	if err != nil {
+	if err := s.db.QueryRow(ctx, countQuery, args...).Scan(&count); err != nil {
 		return nil, application.Metadata{}, fmt.Errorf("failed to count work report topics: %w", err)
 	}
 
-	// Adicionar ordenação e paginação
+	// Adicionar ordenação, limite e offset
 	query += formatOrderBy(
 		filter.SortBy,
 		filter.SortDescending,
@@ -307,25 +305,20 @@ func (s *WorkReportService) FindWorkReportTopics(ctx context.Context, filter app
 
 	// Processar os resultados
 	var wrts []*application.WorkReportTopic
-
 	for rows.Next() {
-
 		var (
 			wrt  application.WorkReportTopic
 			wr   application.WorkReport
 			unit application.Unit
 		)
-
 		// Fazer o scan das colunas
-		err = rows.Scan(
+		if err := rows.Scan(
 			&wrt.ID, &wrt.Title, &wrt.Text, &wrt.WorkReportID, // work_report_topic
 			&wr.ID, &wr.From, &wr.To, &wr.DocName, &wr.UnitID, // work_report
 			&unit.ID, &unit.Name, &unit.StoragePath, &unit.PrometheusServerAddr, // unit
-		)
-		if err != nil {
+		); err != nil {
 			return nil, application.Metadata{}, fmt.Errorf("failed to scan work report topics: %w", err)
 		}
-
 		// Associar o relatório de trabalho e a unidade ao tópico
 		wr.Unit = &unit
 		wrt.WorkReport = &wr

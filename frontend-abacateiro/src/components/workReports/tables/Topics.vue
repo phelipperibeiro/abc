@@ -1,7 +1,5 @@
 <template>
-
   <q-card class="no-shadow" bordered>
-
     <q-card-section>
       <div class="text-h6 text-grey-8">
         Passagens de serviço - Tópicos
@@ -11,7 +9,6 @@
     <q-separator></q-separator>
 
     <q-card-section class="q-pa-none">
-
       <q-table square class="no-shadow"
         title="Passagens"
         row-key="work_report_topic_id"
@@ -19,7 +16,7 @@
         :rows="paginationStore.data"
         :filter="filter"
         :rows-per-page-options="[10, 20, 50, 100]"
-        :pagination="paginationStore.pagination"
+        v-model:pagination="paginationStore.pagination"
         @request="onRequest"
       >
           <template v-slot:top-right>
@@ -75,25 +72,12 @@
             </q-tr>
           </template>
       </q-table>
-
-      <!-- Adicionando paginação manualmente -->
-      <div class="q-pa-lg flex flex-center">
-        <q-pagination
-          v-model="paginationStore.pagination.page"
-          :max="paginationStore.pagination.totalPages"
-          color="primary"
-          input
-          @update:model-value="onRequest"
-          class="custom-pagination"
-        />
-      </div>
-
     </q-card-section>
   </q-card>
 </template>
 
 <script>
-import { defineComponent, ref, onMounted, watch } from "vue";
+import { defineComponent, ref, onMounted } from "vue";
 import { usePaginationStore } from '@/stores/paginationStore';
 
 export default defineComponent({
@@ -102,7 +86,6 @@ export default defineComponent({
     const show_filter = ref(false);
     const paginationStore = usePaginationStore(); // Usando a store de paginação
     const filter = ref('');
-
 
     const columns = ref([
       {
@@ -139,12 +122,21 @@ export default defineComponent({
 
     const fetchTopics = () => {
       const endpoint = 'http://localhost:8888/work-report-topics'; // Definindo o endpoint
-      const filters = {}; // Filtros adicionais (se necessário)
+      const filters = {
+        search: filter.value, // Filtro de pesquisa
+      };
       paginationStore.fetchData(endpoint, filters); // Usando a função da store para buscar os dados
     };
 
-    const onRequest = () => {
-      fetchTopics(); // Atualiza os dados quando a paginação muda
+    const onRequest = (props) => {
+      const { page, rowsPerPage } = props.pagination;
+
+      // Atualiza a paginação no store
+      paginationStore.pagination.page = page;
+      paginationStore.pagination.rowsPerPage = rowsPerPage;
+
+      // Requisita os novos dados
+      fetchTopics();
     };
 
     onMounted(() => {

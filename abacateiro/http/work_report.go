@@ -195,6 +195,10 @@ func (s *Server) handleWorkReportTopicList(w http.ResponseWriter, r *http.Reques
 
 	filter.LimitPagination()
 
+	search := r.URL.Query().Get("search")
+
+	filter.GlobalSearch = &search
+
 	topics, meta, err := s.workReportService.FindWorkReportTopics(r.Context(), filter)
 	if err != nil {
 		s.Error(w, r, err)
