@@ -337,6 +337,119 @@ func (s *WorkReportService) FindWorkReportTopics(ctx context.Context, filter app
 }
 
 func (s *WorkReportService) FindWorkReportTopicsAdvSearch(ctx context.Context, filter application.WRAdvSearchFilter) ([]*application.WRAdvSearchResult, application.Metadata, error) {
-	// implementar lógica de busca avançada de tópicos de relatório (full text search)
-	return nil, application.Metadata{}, nil
+
+	var (
+		conditions []string
+		args       []interface{}
+		argID      = 1
+	)
+
+	// Função auxiliar para adicionar condições com placeholders
+	addCondition := func(condition string, values ...interface{}) {
+		placeholders := make([]interface{}, len(values))
+		for i := range values {
+			placeholders[i] = argID + i
+		}
+		conditions = append(conditions, fmt.Sprintf(condition, placeholders...))
+		args = append(args, values...)
+		argID += len(values)
+	}
+
+	countQuery := `
+		SELECT
+			COUNT(1)
+		FROM work_report_topics
+		JOIN work_reports USING(work_report_id)
+	`
+
+	// Query base com placeholders
+	query := `
+		SELECT
+			work_report_topic_id,
+			work_report_topic_title,
+			work_report_topic_text,
+			work_report_id,
+			work_report_docname,
+			ts_rank(ts, to_tsquery('portuguese', $1)) AS rank,
+			ts_headline('portuguese', work_report_topic_title, to_tsquery('portuguese', $1)) AS highlight_title,
+			ts_headline('portuguese', work_report_topic_text, to_tsquery('portuguese', $1)) AS highlight_text
+		FROM work_report_topics
+		JOIN work_reports USING(work_report_id)
+	`
+
+	if filter.GlobalSearch != nil && *filter.GlobalSearch != "" {
+		search := fmt.Sprintf("%s:*", strings.ReplaceAll(*filter.GlobalSearch, " ", " | "))
+		addCondition(" ts @@ to_tsquery('portuguese', $%d) ", search)
+	}
+
+	if filter.UnitID != nil {
+		addCondition(" unit_id = $%d ", *filter.UnitID)
+	}
+
+	if filter.From != nil {
+		addCondition(" work_report_from >= $%d ", *filter.From)
+	}
+
+	if filter.To != nil {
+		addCondition(" work_report_to <= $%d ", *filter.To)
+	}
+
+	// Concatenar as condições à query
+	if len(conditions) > 0 {
+		whereClause := " WHERE " + strings.Join(conditions, " AND ")
+		countQuery += whereClause
+		query += whereClause
+	}
+
+	var count int
+	if err := s.db.QueryRow(ctx, countQuery, args...).Scan(&count); err != nil {
+		return nil, application.Metadata{}, fmt.Errorf("failed to count work report topics: %w", err)
+	}
+
+	// fmt.Printf(" Query: %s\n ", query)
+	query += formatOrderBy(
+		filter.SortBy,
+		filter.SortDescending,
+		"rank",
+		[]string{},
+	)
+
+	// Adicionar limit e offset
+	query += formatLimitOffset(filter.Limit(), filter.Offset())
+
+	// Executar a query
+	rows, err := s.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, application.Metadata{}, err
+	}
+	defer rows.Close()
+
+	var results []*application.WRAdvSearchResult
+
+	// Processar os resultados da query
+	for rows.Next() {
+		var result application.WRAdvSearchResult
+		if err := rows.Scan(
+			&result.WorkReportTopicID,
+			&result.WorkReportTopicTitle,
+			&result.WorkReportTopicText,
+			&result.WorkReportID,
+			&result.WorkReportDocName,
+			&result.Rank,
+			&result.HighLightTitle,
+			&result.HighLightText,
+		); err != nil {
+			return nil, application.Metadata{}, err
+		}
+		results = append(results, &result)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, application.Metadata{}, err
+	}
+
+	// Calcular metadata de paginação
+	meta := application.CalculateMetadata(count, filter.Page, filter.PageSize)
+
+	return results, meta, nil
 }

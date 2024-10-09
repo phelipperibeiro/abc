@@ -56,9 +56,10 @@ func main() {
 		testDeleteWorkReport(logger, workReportService)
 		testCreateWorkReportTopic(logger, workReportService)
 		testFindWorkReportTopicByID(logger, workReportService)
+		testFindWorkReportTopics(logger, workReportService)
 	}
 
-	testFindWorkReportTopics(logger, workReportService)
+	testFindWorkReportTopicsAdvSearch(logger, workReportService)
 }
 
 func testFindWorkReportByID(logger *log.Logger, workReportService *postgres.WorkReportService) application.WorkReport {
@@ -193,6 +194,29 @@ func testFindWorkReportTopics(logger *log.Logger, workReportService *postgres.Wo
 	logger.Printf("Tópicos de relatório de trabalho encontrados: %v", workReportTopics)
 }
 
-// func testFindWorkReportTopicsAdvSearch(logger *log.Logger, workReportService *postgres.WorkReportService) {
-// 	// implementar logica de busca avançada de tópicos de relatório
-// }
+func testFindWorkReportTopicsAdvSearch(logger *log.Logger, workReportService *postgres.WorkReportService) {
+
+	fromDate, _ := time.Parse("2006-01-02", "2020-01-01")
+	toDate, _ := time.Parse("2006-01-02", "2025-01-01")
+
+	workReportTopics, meta, err := workReportService.FindWorkReportTopicsAdvSearch(
+		context.Background(),
+		application.WRAdvSearchFilter{
+			UnitID:       intPtr(5),
+			From:         timePtr(fromDate),
+			To:           timePtr(toDate),
+			GlobalSearch: strPtr("Gateway"),
+			Pagination: application.Pagination{
+				Page:     1,
+				PageSize: 1,
+			},
+		})
+
+	if err != nil {
+		logger.Fatalf("Erro ao buscar tópicos de relatório de trabalho: %v", err)
+	}
+
+	dump(workReportTopics)
+	dump(meta)
+	logger.Printf("Tópicos de relatório de trabalho encontrados: %v", workReportTopics)
+}
