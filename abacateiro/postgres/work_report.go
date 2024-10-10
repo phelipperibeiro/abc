@@ -339,9 +339,10 @@ func (s *WorkReportService) FindWorkReportTopics(ctx context.Context, filter app
 func (s *WorkReportService) FindWorkReportTopicsAdvSearch(ctx context.Context, filter application.WRAdvSearchFilter) ([]*application.WRAdvSearchResult, application.Metadata, error) {
 
 	var (
-		conditions []string
-		args       []interface{}
-		argID      = 1
+		conditions    []string
+		conditionsORs []string
+		args          []interface{}
+		argID         = 1
 	)
 
 	// Função auxiliar para adicionar condições com placeholders
@@ -355,11 +356,22 @@ func (s *WorkReportService) FindWorkReportTopicsAdvSearch(ctx context.Context, f
 		argID += len(values)
 	}
 
+	addConditionOR := func(condition string, values ...interface{}) {
+		placeholders := make([]interface{}, len(values))
+		for i := range values {
+			placeholders[i] = argID + i
+		}
+		conditionsORs = append(conditionsORs, fmt.Sprintf(condition, placeholders...))
+		args = append(args, values...)
+		argID += len(values)
+	}
+
 	countQuery := `
 		SELECT
 			COUNT(1)
 		FROM work_report_topics
 		JOIN work_reports USING(work_report_id)
+		WHERE 1 = 1
 	`
 
 	// Query base com placeholders
@@ -375,28 +387,41 @@ func (s *WorkReportService) FindWorkReportTopicsAdvSearch(ctx context.Context, f
 			ts_headline('portuguese', work_report_topic_text, to_tsquery('portuguese', $1)) AS highlight_text
 		FROM work_report_topics
 		JOIN work_reports USING(work_report_id)
+		WHERE 1 = 1
 	`
 
 	if filter.GlobalSearch != nil && *filter.GlobalSearch != "" {
 		search := fmt.Sprintf("%s:*", strings.ReplaceAll(*filter.GlobalSearch, " ", " | "))
-		addCondition(" ts @@ to_tsquery('portuguese', $%d) ", search)
+		addCondition(" AND ts @@ to_tsquery('portuguese', $%d) ", search)
 	}
 
 	if filter.UnitID != nil {
-		addCondition(" unit_id = $%d ", *filter.UnitID)
+		addCondition(" AND unit_id = $%d ", *filter.UnitID)
 	}
 
 	if filter.From != nil {
-		addCondition(" work_report_from >= $%d ", *filter.From)
+		addCondition(" AND work_report_from >= $%d ", *filter.From)
 	}
 
 	if filter.To != nil {
-		addCondition(" work_report_to <= $%d ", *filter.To)
+		addCondition(" AND work_report_to <= $%d ", *filter.To)
+	}
+
+	if year := filter.Years; len(year) > 0 {
+		for _, y := range year {
+			addConditionOR(" (((extract(year from work_report_from) = $%d) OR (extract(year from work_report_to) = $%d))) ", y, y)
+		}
 	}
 
 	// Concatenar as condições à query
 	if len(conditions) > 0 {
-		whereClause := " WHERE " + strings.Join(conditions, " AND ")
+		whereClause := strings.Join(conditions, " ")
+		countQuery += whereClause
+		query += whereClause
+	}
+
+	if len(conditionsORs) > 0 {
+		whereClause := " AND (" + strings.Join(conditionsORs, " OR ") + ") "
 		countQuery += whereClause
 		query += whereClause
 	}
@@ -406,7 +431,8 @@ func (s *WorkReportService) FindWorkReportTopicsAdvSearch(ctx context.Context, f
 		return nil, application.Metadata{}, fmt.Errorf("failed to count work report topics: %w", err)
 	}
 
-	// fmt.Printf(" Query: %s\n ", query)
+	fmt.Printf(" Query: %s\n ", query)
+
 	query += formatOrderBy(
 		filter.SortBy,
 		filter.SortDescending,

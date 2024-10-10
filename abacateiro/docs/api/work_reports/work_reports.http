@@ -22,3 +22,6 @@ GET http://localhost:8888/work-report-topics?page=2&page_size=10
 
 ### Get All Work Report Topics (with filter)
 GET http://localhost:8888/work-report-topics?page=1&page_size=10&search=duplicadas%20para%20par%C3%A2metros%20diferentes%20de%20um%20mesmo%20bloco
+
+### Get Work Report Topic Adv Search
+GET http://localhost:8888/work-report-topics/adv-search?search=Gateway&page=1&page_size=1&year[]=2024&year[]=2025&unit_id=5&from=2020-01-01&to=2025-01-01

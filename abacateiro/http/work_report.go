@@ -5,10 +5,13 @@ import (
 	"application/workreport"
 	"archive/zip"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -32,15 +35,16 @@ type findWorkReportTopicResponse struct {
 	Metadata         application.Metadata           `json:"metadata"`
 }
 
-// type findWRAdvSearchResponse struct {
-// 	Results  []*application.WRAdvSearchResult `json:"work_report_adv_search_results"`
-// 	Metadata application.Metadata             `json:"metadata"`
-// }
+type findWRAdvSearchResponse struct {
+	Results  []*application.WRAdvSearchResult `json:"work_report_adv_search_results"`
+	Metadata application.Metadata             `json:"metadata"`
+}
 
 func (s *Server) RegisterWorkReportRoutes(router chi.Router) {
 	router.Get("/work-reports", s.handleWorkReportList)
 	router.Post("/work-reports/{file_name}", s.handleCreateWorkReport)
 	router.Get("/work-report-topics", s.handleWorkReportTopicList)
+	router.Get("/work-report-topics/adv-search", s.handleWorkReportAdvSearch)
 
 }
 
@@ -209,6 +213,99 @@ func (s *Server) handleWorkReportTopicList(w http.ResponseWriter, r *http.Reques
 	if err := json.NewEncoder(w).Encode(findWorkReportTopicResponse{
 		WorkReportTopics: topics,
 		Metadata:         meta,
+	}); err != nil {
+		s.Error(w, r, err)
+		return
+	}
+}
+
+func dump(data interface{}) {
+	jsonData, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		fmt.Println("Erro ao serializar dados:", err)
+		os.Exit(1)
+	}
+	fmt.Println(string(jsonData))
+}
+
+// type WRAdvSearchFilter struct {
+// 	UnitID *int       `json:"unit_id"`
+// 	From   *time.Time `json:"work_report_from"`
+// 	To     *time.Time `json:"work_report_to"`
+// 	Years  []int      `json:"years"`
+
+// 	GlobalSearch *string `json:"global_search"`
+
+// 	Pagination
+// }
+
+func (s *Server) handleWorkReportAdvSearch(w http.ResponseWriter, r *http.Request) {
+
+	var filter application.WRAdvSearchFilter
+
+	// Define content type and decode JSON body if applicable using switch
+	switch r.Header.Get("Content-type") {
+	case "application/json":
+		if err := json.NewDecoder(r.Body).Decode(&filter); err != nil {
+			s.Error(w, r, application.Errorf(application.ERRINVALID, "Invalid JSON body"))
+			return
+		}
+	default:
+		filter.Pagination.Page, _ = strconv.Atoi(r.URL.Query().Get("page"))
+		filter.Pagination.PageSize, _ = strconv.Atoi(r.URL.Query().Get("page_size"))
+	}
+
+	filter.LimitPagination()
+
+	getYears := func(yearsParams interface{}) ([]int, error) {
+		var years []int
+
+		// Verifica se é um array de strings e maior que 0
+		params, ok := yearsParams.([]string)
+		if !ok || len(params) == 0 {
+			return nil, fmt.Errorf("year must be a non-empty array of strings")
+		}
+
+		for _, yearStr := range params {
+			year, err := strconv.Atoi(yearStr)
+			if err != nil {
+				return nil, fmt.Errorf("invalid year format: %s", yearStr)
+			}
+			years = append(years, year)
+		}
+		return years, nil
+	}
+
+	// Extract query parameters
+	years, _ := getYears(r.URL.Query()["year[]"])
+	unitID, _ := strconv.Atoi(r.URL.Query().Get("unit_id"))
+	search := r.URL.Query().Get("search")
+	from := r.URL.Query().Get("from")
+	to := r.URL.Query().Get("to")
+
+	// Parse dates
+	fromDate, _ := time.Parse("2006-01-02", from)
+	toDate, _ := time.Parse("2006-01-02", to)
+
+	// Set filter fields
+	filter.From = &fromDate
+	filter.To = &toDate
+	filter.UnitID = &unitID
+	filter.GlobalSearch = &search
+	filter.Years = years
+
+	// Call the service to get results
+	results, meta, err := s.workReportService.FindWorkReportTopicsAdvSearch(r.Context(), filter)
+	if err != nil {
+		s.Error(w, r, err)
+		return
+	}
+
+	// Return the response as JSON
+	w.Header().Set("Content-type", "application/json")
+	if err := json.NewEncoder(w).Encode(findWRAdvSearchResponse{
+		Results:  results,
+		Metadata: meta,
 	}); err != nil {
 		s.Error(w, r, err)
 		return
