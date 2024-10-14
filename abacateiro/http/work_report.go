@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -219,24 +218,13 @@ func (s *Server) handleWorkReportTopicList(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func dump(data interface{}) {
-	jsonData, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		fmt.Println("Erro ao serializar dados:", err)
-		os.Exit(1)
-	}
-	fmt.Println(string(jsonData))
-}
-
-// type WRAdvSearchFilter struct {
-// 	UnitID *int       `json:"unit_id"`
-// 	From   *time.Time `json:"work_report_from"`
-// 	To     *time.Time `json:"work_report_to"`
-// 	Years  []int      `json:"years"`
-
-// 	GlobalSearch *string `json:"global_search"`
-
-// 	Pagination
+// func dump(data interface{}) {
+// 	jsonData, err := json.MarshalIndent(data, "", "  ")
+// 	if err != nil {
+// 		fmt.Println("Erro ao serializar dados:", err)
+// 		os.Exit(1)
+// 	}
+// 	fmt.Println(string(jsonData))
 // }
 
 func (s *Server) handleWorkReportAdvSearch(w http.ResponseWriter, r *http.Request) {
@@ -256,43 +244,52 @@ func (s *Server) handleWorkReportAdvSearch(w http.ResponseWriter, r *http.Reques
 	}
 
 	filter.LimitPagination()
-
-	getYears := func(yearsParams interface{}) ([]int, error) {
-		var years []int
-
-		// Verifica se é um array de strings e maior que 0
-		params, ok := yearsParams.([]string)
-		if !ok || len(params) == 0 {
-			return nil, fmt.Errorf("year must be a non-empty array of strings")
-		}
-
-		for _, yearStr := range params {
-			year, err := strconv.Atoi(yearStr)
-			if err != nil {
-				return nil, fmt.Errorf("invalid year format: %s", yearStr)
-			}
-			years = append(years, year)
-		}
-		return years, nil
-	}
+	filter.SortDescending = true
 
 	// Extract query parameters
-	years, _ := getYears(r.URL.Query()["year[]"])
-	unitID, _ := strconv.Atoi(r.URL.Query().Get("unit_id"))
 	search := r.URL.Query().Get("search")
+	unitID := r.URL.Query().Get("unit_id")
 	from := r.URL.Query().Get("from")
 	to := r.URL.Query().Get("to")
+	years := r.URL.Query()["year[]"]
 
-	// Parse dates
-	fromDate, _ := time.Parse("2006-01-02", from)
-	toDate, _ := time.Parse("2006-01-02", to)
+	if search != "" {
+		filter.GlobalSearch = &search
+	}
 
-	// Set filter fields
-	filter.From = &fromDate
-	filter.To = &toDate
-	filter.UnitID = &unitID
-	filter.GlobalSearch = &search
-	filter.Years = years
+	if unitID != "" {
+		unitIDInt, _ := strconv.Atoi(unitID)
+		filter.UnitID = &unitIDInt
+	}
+
+	if from != "" {
+		fromDate, _ := time.Parse("2006-01-02", from)
+		filter.From = &fromDate
+	}
+
+	if to != "" {
+		toDate, _ := time.Parse("2006-01-02", to)
+		filter.To = &toDate
+	}
+
+	if len(years) > 0 {
+		yearsInt, err := getYears(years)
+		if err != nil {
+			s.Error(w, r, application.Errorf(application.ErrInvalid, "Invalid year format: %v", err))
+			return
+		}
+		filter.Years = yearsInt
+	}
+
+	// dump(map[string]interface{}{
+	// 	"years":   years,
+	// 	"unit_id": unitID,
+	// 	"search":  search,
+	// 	"from":    from,
+	// 	"to":      to,
+	// })
+
+	// dump(filter)
 
 	// Call the service to get results
 	results, meta, err := s.workReportService.FindWorkReportTopicsAdvSearch(r.Context(), filter)
@@ -310,4 +307,23 @@ func (s *Server) handleWorkReportAdvSearch(w http.ResponseWriter, r *http.Reques
 		s.Error(w, r, err)
 		return
 	}
+}
+
+func getYears(yearsParams interface{}) ([]int, error) {
+	var years []int
+
+	// Verifica se é um array de strings e maior que 0
+	params, ok := yearsParams.([]string)
+	if !ok || len(params) == 0 {
+		return nil, fmt.Errorf("year must be a non-empty array of strings")
+	}
+
+	for _, yearStr := range params {
+		year, err := strconv.Atoi(yearStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid year format: %s", yearStr)
+		}
+		years = append(years, year)
+	}
+	return years, nil
 }

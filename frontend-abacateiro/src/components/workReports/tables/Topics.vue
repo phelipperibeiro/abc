@@ -78,7 +78,7 @@
 
 <script>
 import { defineComponent, ref, onMounted } from "vue";
-import { usePaginationStore } from '@/stores/paginationStore';
+import { usePaginationStore } from '@/stores/topicsPaginationStore';
 
 export default defineComponent({
   name: 'TopicsComponent',

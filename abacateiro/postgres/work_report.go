@@ -336,6 +336,15 @@ func (s *WorkReportService) FindWorkReportTopics(ctx context.Context, filter app
 	return wrts, meta, nil
 }
 
+// func dump(data interface{}) {
+// 	jsonData, err := json.MarshalIndent(data, "", "  ")
+// 	if err != nil {
+// 		fmt.Println("Erro ao serializar dados:", err)
+// 		os.Exit(1)
+// 	}
+// 	fmt.Println(string(jsonData))
+// }
+
 func (s *WorkReportService) FindWorkReportTopicsAdvSearch(ctx context.Context, filter application.WRAdvSearchFilter) ([]*application.WRAdvSearchResult, application.Metadata, error) {
 
 	var (
@@ -390,9 +399,11 @@ func (s *WorkReportService) FindWorkReportTopicsAdvSearch(ctx context.Context, f
 		WHERE 1 = 1
 	`
 
-	if filter.GlobalSearch != nil && *filter.GlobalSearch != "" {
+	if filter.GlobalSearch != nil {
 		search := fmt.Sprintf("%s:*", strings.ReplaceAll(*filter.GlobalSearch, " ", " | "))
 		addCondition(" AND ts @@ to_tsquery('portuguese', $%d) ", search)
+	} else {
+		addCondition(" AND ts @@ to_tsquery('portuguese', $%d) ", " ")
 	}
 
 	if filter.UnitID != nil {
@@ -431,8 +442,6 @@ func (s *WorkReportService) FindWorkReportTopicsAdvSearch(ctx context.Context, f
 		return nil, application.Metadata{}, fmt.Errorf("failed to count work report topics: %w", err)
 	}
 
-	fmt.Printf(" Query: %s\n ", query)
-
 	query += formatOrderBy(
 		filter.SortBy,
 		filter.SortDescending,
@@ -442,6 +451,12 @@ func (s *WorkReportService) FindWorkReportTopicsAdvSearch(ctx context.Context, f
 
 	// Adicionar limit e offset
 	query += formatLimitOffset(filter.Limit(), filter.Offset())
+
+	fmt.Println()
+	fmt.Print("Query:")
+	fmt.Println()
+	fmt.Print(query)
+	fmt.Println()
 
 	// Executar a query
 	rows, err := s.db.Query(ctx, query, args...)
@@ -476,6 +491,10 @@ func (s *WorkReportService) FindWorkReportTopicsAdvSearch(ctx context.Context, f
 
 	// Calcular metadata de paginação
 	meta := application.CalculateMetadata(count, filter.Page, filter.PageSize)
+
+	if len(results) == 0 {
+		return []*application.WRAdvSearchResult{}, meta, nil
+	}
 
 	return results, meta, nil
 }
