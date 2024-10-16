@@ -18,13 +18,24 @@
         :filter="filter"
       >
         <template v-slot:top-right>
+
           <q-input v-if="show_filter" filled borderless dense debounce="300" v-model="filter" placeholder="Search">
             <template v-slot:append>
               <q-icon name="search"/>
             </template>
           </q-input>
 
+
+          <div class="q-mx-md"></div>
+
           <q-btn class="q-ml-sm" icon="filter_list" @click="show_filter=!show_filter" flat/>
+
+          <div class="q-mx-md"></div>
+
+           <q-btn color="primary" icon="add" outline round size="xs" @click="() => {showAddModal = true;}">
+            <q-tooltip>Adicionar passagem de serviço</q-tooltip>
+          </q-btn>
+
         </template>
 
         <template v-slot:body-cell-Action="props">
@@ -37,16 +48,30 @@
 
       </q-table>
     </q-card-section>
+
   </q-card>
+
+  <q-dialog v-model="showAddModal" transition-show="slide-up" transition-hide="slide-down"
+    class="q-pa-md">
+      <add-file @close="showAddModal = false" @close-update="showAddModal = false; onRequest()" :api="'/work-reports'" />
+  </q-dialog>
+
 </template>
 
 <script>
-import { defineComponent, ref, onMounted } from "vue";
+import { defineComponent, ref, onMounted, defineAsyncComponent } from "vue";
 import axios from "axios";
+
 
 export default defineComponent({
   name: "ReportsComponent",
+  components: {
+    AddFile: defineAsyncComponent(() => import('@/components/workReports/upload/AddFile.vue'))
+  },
   setup() {
+
+    const showAddModal = ref(false);
+
     const workReports = ref([]);
 
     const columns = ref([
@@ -115,6 +140,7 @@ export default defineComponent({
       show_filter,
       workReports,
       columns,
+      showAddModal,
       downloadReport
     }
   }
